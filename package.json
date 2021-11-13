@@ -1,0 +1,36 @@
+{
+  "name": "online-poker",
+  "version": "1.0.0",
+  "description": "3940 Term Project",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./src/app.js",
+    "dev": "nodemon ./src/app.js",
+    "test": "jest --config=test/config.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ViclyC/Online-Poker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ViclyC/Online-Poker/issues"
+  },
+  "homepage": "https://github.com/ViclyC/Online-Poker#readme",
+  "dependencies": {
+    "cluster": "^0.7.7",
+    "express": "^4.17.1",
+    "heroku": "^7.39.3",
+    "jshint": "^2.9.3",
+    "pokersolver": "^2.1.3",
+    "socket.io": "^2.3.0"
+  },
+  "engines": {
+
+    "yarn": "^1.19"
+  },
+  "devDependencies": {
+    "jest": "^26.0.1"
+  }
+}
