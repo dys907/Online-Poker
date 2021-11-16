@@ -787,6 +787,18 @@ socket.on('displayPossibleMoves', function (data) {
   else $('#usernameRaise').hide();
 });
 
+// client listener
+// get the card data and show it (modal? toast? image somewhere)
+socket.on('showCommunityCard', function (data) {
+  console.log(data);
+})
+
+// starting point from client
+// emit to server call revealCommunityCard
+function revealCommunityCard() {
+  socket.emit('revealCommunityCard', {});
+}
+
 function renderSelf(data) {
   $('#playNext').empty();
   $('#usernamesMoney').text('$' + data.money);

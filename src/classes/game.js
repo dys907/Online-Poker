@@ -21,6 +21,7 @@ const Game = function (name, host) {
     bets: [],
   };
   this.community = [];
+  this.thisRoundsCards = [];
   this.foldPot = 0;
   this.bigBlindWent = false;
   this.lastMoveParsed = { move: '', player: '' };
@@ -84,6 +85,10 @@ const Game = function (name, host) {
     this.log('deck len' + this.deck.cards.length);
     for (pn of this.players) {
       pn.allIn = false;
+    }
+
+    for (let i = 0; i < 5; i++) {
+      this.thisRoundsCards.push(this.deck.dealRandomCard());
     }
 
     // Init dealer
@@ -306,17 +311,17 @@ const Game = function (name, host) {
       if (this.allPlayersAllIn()) {
         this.log(' all players all in');
         if (this.roundData.bets.length == 1) {
-          this.community.push(this.deck.dealRandomCard());
-          this.community.push(this.deck.dealRandomCard());
-          this.community.push(this.deck.dealRandomCard());
+          this.community.push(this.thisRoundsCards[0]);
+          this.community.push(this.thisRoundsCards[1]);
+          this.community.push(this.thisRoundsCards[2]);
           this.roundData.bets.push([]);
         }
         if (this.roundData.bets.length == 2) {
-          this.community.push(this.deck.dealRandomCard());
+          this.community.push(this.thisRoundsCards[3]);
           this.roundData.bets.push([]);
         }
         if (this.roundData.bets.length == 3) {
-          this.community.push(this.deck.dealRandomCard());
+          this.community.push(this.thisRoundsCards[4]);
           this.roundData.bets.push([]);
         }
         this.rerender();
@@ -332,15 +337,15 @@ const Game = function (name, host) {
         handOver = true;
       } else {
         if (this.roundData.bets.length == 1) {
-          this.community.push(this.deck.dealRandomCard());
-          this.community.push(this.deck.dealRandomCard());
-          this.community.push(this.deck.dealRandomCard());
+          this.community.push(this.thisRoundsCards[0]);
+          this.community.push(this.thisRoundsCards[1]);
+          this.community.push(this.thisRoundsCards[2]);
           this.updateStage();
         } else if (this.roundData.bets.length == 2) {
-          this.community.push(this.deck.dealRandomCard());
+          this.community.push(this.thisRoundsCards[3]);
           this.updateStage();
         } else if (this.roundData.bets.length == 3) {
-          this.community.push(this.deck.dealRandomCard());
+          this.community.push(this.thisRoundsCards[4]);
           this.updateStage();
         } else if (this.roundData.bets.length == 4) {
           handOver = true;

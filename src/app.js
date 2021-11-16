@@ -145,6 +145,19 @@ io.on('connection', (socket) => {
       }
     }
   });
+
+  // power up
+  // listening to revealCommunityCard from client
+  // send back card data to client showCommunityCard
+  socket.on('revealCommunityCard', () => {
+    const game = rooms.find(
+      (r) => r.findPlayer(socket.id).socket.id === socket.id
+    );
+    if (game.roundInProgress) {
+      const lastCard = game.thisRoundsCards[4];
+      socket.emit('showCommunityCard', lastCard);
+    }
+  })
 });
 
 server.listen(PORT, () => console.log(`hosting on port ${PORT}`));
