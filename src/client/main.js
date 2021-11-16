@@ -795,8 +795,8 @@ socket.on('showCommunityCard', function (data) {
 
 // starting point from client
 // emit to server call revealCommunityCard
-function revealCommunityCard() {
-  socket.emit('revealCommunityCard', {});
+function usePowerUp(num) {
+  socket.emit('powerUp', num);
 }
 
 function renderSelf(data) {

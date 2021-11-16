@@ -1,6 +1,7 @@
 const Player = function (playerName, socket, debug) {
   this.username = playerName;
   this.cards = [];
+  this.powerUps = ['showCommunityCard', 'showCommunityCard'];
   this.socket = socket;
   this.currentCard = null;
   this.money = 100;
