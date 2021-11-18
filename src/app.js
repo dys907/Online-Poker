@@ -14,16 +14,16 @@ app.use('/', express.static(__dirname + '/client'));
 
 let rooms = [];
 
-io.on('connection', (socket) => {
-  console.log('new connection ', socket.id);
-  socket.on('host', (data) => {
-    if (data.username == '' || data.username.length > 12) {
-      socket.emit('hostRoom', undefined);
+io.on("connection", (socket) => {
+  console.log("new connection ", socket.id);
+  socket.on("host", (data) => {
+    if (data.username == "" || data.username.length > 12) {
+      socket.emit("hostRoom", undefined);
     } else {
       let code;
       do {
         code =
-          '' +
+          "" +
           Math.floor(Math.random() * 10) +
           Math.floor(Math.random() * 10) +
           Math.floor(Math.random() * 10) +
@@ -32,14 +32,14 @@ io.on('connection', (socket) => {
       const game = new Game(code, data.username);
       rooms.push(game);
       game.addPlayer(data.username, socket);
-      game.emitPlayers('hostRoom', {
+      game.emitPlayers("hostRoom", {
         code: code,
         players: game.getPlayersArray(),
       });
     }
   });
 
-  socket.on('join', (data) => {
+  socket.on("join", (data) => {
     const game = rooms.find((r) => r.getCode() === data.code);
     if (
       game == undefined ||
@@ -47,47 +47,47 @@ io.on('connection', (socket) => {
       data.username == undefined ||
       data.username.length > 12
     ) {
-      socket.emit('joinRoom', undefined);
+      socket.emit("joinRoom", undefined);
     } else {
       game.addPlayer(data.username, socket);
       rooms = rooms.map((r) => (r.getCode() === data.code ? game : r));
-      game.emitPlayers('joinRoom', {
+      game.emitPlayers("joinRoom", {
         host: game.getHostName(),
         players: game.getPlayersArray(),
       });
-      game.emitPlayers('hostRoom', {
+      game.emitPlayers("hostRoom", {
         code: data.code,
         players: game.getPlayersArray(),
       });
     }
   });
 
-  socket.on('startGame', (data) => {
+  socket.on("startGame", (data) => {
     const game = rooms.find((r) => r.getCode() == data.code);
     if (game == undefined) {
-      socket.emit('gameBegin', undefined);
+      socket.emit("gameBegin", undefined);
     } else {
-      game.emitPlayers('gameBegin', { code: data.code });
+      game.emitPlayers("gameBegin", { code: data.code });
       game.startGame();
     }
   });
 
-  socket.on('evaluatePossibleMoves', () => {
+  socket.on("evaluatePossibleMoves", () => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
     if (game.roundInProgress) {
       const possibleMoves = game.getPossibleMoves(socket);
-      socket.emit('displayPossibleMoves', possibleMoves);
+      socket.emit("displayPossibleMoves", possibleMoves);
     }
   });
 
-  socket.on('raiseModalData', () => {
+  socket.on("raiseModalData", () => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
     if (game != undefined) {
-      socket.emit('updateRaiseModal', {
+      socket.emit("updateRaiseModal", {
         topBet: game.getCurrentTopBet(),
         usernameMoney:
           game.getPlayerBetInStage(game.findPlayer(socket.id)) +
@@ -96,7 +96,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('startNextRound', () => {
+  socket.on("startNextRound", () => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
@@ -108,22 +108,22 @@ io.on('connection', (socket) => {
   });
 
   // precondition: user must be able to make the move in the first place.
-  socket.on('moveMade', (data) => {
+  socket.on("moveMade", (data) => {
     // worst case complexity O(num_rooms * num_players_in_room)
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
 
     if (game != undefined) {
-      if (data.move == 'fold') {
+      if (data.move == "fold") {
         game.fold(socket);
-      } else if (data.move == 'check') {
+      } else if (data.move == "check") {
         game.check(socket);
-      } else if (data.move == 'bet') {
+      } else if (data.move == "bet") {
         game.bet(socket, data.bet);
-      } else if (data.move == 'call') {
+      } else if (data.move == "call") {
         game.call(socket);
-      } else if (data.move == 'raise') {
+      } else if (data.move == "raise") {
         game.raise(socket, data.bet);
       }
     } else {
@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
+  socket.on("disconnect", () => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
@@ -149,29 +149,59 @@ io.on('connection', (socket) => {
   // power up
   // listening to revealCommunityCard from client
   // send back card data to client showCommunityCard
-  socket.on('powerUp', (num) => {
+  socket.on("powerUp", (data) => {
+    const game = rooms.find(
+      (r) => r.findPlayer(socket.id).socket.id === socket.id
+    );
+    let powerup = data.powerup;
+    let target = data.target;
+    if (game.roundInProgress) {
+      //let powerup = '';
+      const player = game.findPlayer(socket.id);
+      //testing
+      const otherplayer = game.findPlayerWithName(target);
+      // if (num == 1) {
+      //   powerup = player.powerUps[0];
+      // } else {
+      //   powerup = player.powerUps[1];
+      // }
+      switch (powerup) {
+        case "showCommunityCard":
+          const lastCard = game.thisRoundsCards[4];
+          socket.emit(powerup, lastCard);
+          break;
+        case "showPlayerCard":
+          const revealCard = otherplayer.cards[0];
+          socket.emit(powerup, revealCard);
+        default:
+          break;
+      }
+    }
+  });
+
+  socket.on("showSelectTarget", (powerup) => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
     if (game.roundInProgress) {
-      let powerup = '';
-      const player = game.findPlayer(socket.id);
-      if (num == 1) {
-        powerup = player.powerUps[0];
-      } else {
-        powerup = player.powerUps[1];
-      }
       switch (powerup) {
-        case 'showCommunityCard':
-          const lastCard = game.thisRoundsCards[4];
-          socket.emit(powerup, lastCard);
-          break;
+        case "showPlayerCard":
+          let nameArr = [];
+          game.players.forEach((p) => {
+            nameArr.push(p.username);
+          });
+          socket.emit("selectTarget", {
+            powerup: powerup,
+            playerNames: nameArr,
+          });
+        // const revealCard = otherplayer.cards[0];
+        // socket.emit(powerup, revealCard);
         default:
           break;
       }
-
     }
-  })
+  });
 });
+
 
 server.listen(PORT, () => console.log(`hosting on port ${PORT}`));

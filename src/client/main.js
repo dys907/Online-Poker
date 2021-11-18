@@ -343,6 +343,18 @@ var raise = function () {
   }
 };
 
+var hideTarget = function() {
+  $("#targetModal").hide();
+}
+
+var target = function(){
+  let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
+  let powerup = $('#target-radio').attr('powerup');
+  $('#target-radio').removeAttr('powerup');
+  $("#targetModal").hide();
+  socket.emit('powerUp', {powerup: powerup, target: selectedPlayerName});
+}
+
 function renderCard(card) {
   if (card.suit == '♠' || card.suit == '♣')
     return (
@@ -793,10 +805,31 @@ socket.on('showCommunityCard', function (data) {
   console.log(data);
 })
 
+socket.on('showPlayerCard', function(data) {
+  console.log(data);
+})
+
+socket.on('selectTarget', function(data) {
+  let names = data.playerNames;
+  let powerup = data.powerup;
+  $("#target-radio").empty();
+  names.forEach((name) => {
+    $('<input type="radio" name="target" value="' + name + '" id="radio-' + name + '"><label for="radio-' + name + '">' + name + '</label>').appendTo("#target-radio");
+  });
+  $('input[name=target]:eq(0)').prop("checked", true);
+  $("#target-radio").attr('powerup',powerup);
+  $("#targetModal").show();
+})
+
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {
-  socket.emit('powerUp', num);
+  let powerup = $("#usePowerUp" + num).attr('powerup');
+  if (powerup != 'showCommunityCard') {
+    socket.emit('showSelectTarget', powerup);
+  } else {
+    socket.emit('powerUp', {powerup:powerup});
+  }
 }
 
 function renderSelf(data) {
