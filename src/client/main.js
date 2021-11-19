@@ -805,6 +805,8 @@ socket.on('showCommunityCard', function (data) {
   console.log(data);
 })
 
+// client listener
+// get the card and show it
 socket.on('showPlayerCard', function(data) {
   console.log(data);
 })
@@ -824,10 +826,13 @@ socket.on('selectTarget', function(data) {
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {
+  // change this to server side check
   let powerup = $("#usePowerUp" + num).attr('powerup');
+  // have target
   if (powerup != 'showCommunityCard') {
     socket.emit('showSelectTarget', powerup);
   } else {
+    // have no target
     socket.emit('powerUp', {powerup:powerup});
   }
 }

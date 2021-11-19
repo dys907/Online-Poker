@@ -185,11 +185,13 @@ io.on("connection", (socket) => {
     );
     if (game.roundInProgress) {
       switch (powerup) {
+        // probably doesn't need switch
         case "showPlayerCard":
           let nameArr = [];
           game.players.forEach((p) => {
             nameArr.push(p.username);
           });
+          // back to client with list of players and power up name
           socket.emit("selectTarget", {
             powerup: powerup,
             playerNames: nameArr,
