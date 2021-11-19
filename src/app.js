@@ -158,14 +158,18 @@ io.on('connection', (socket) => {
       const player = game.findPlayer(socket.id);
       if (num == 1) {
         powerup = player.powerUps[0];
-      } else {
+      } else if (num == 2) {
         powerup = player.powerUps[1];
+      } else if (num == 3) {
+        powerup = player.powerUps[2];
       }
       switch (powerup) {
         case 'showCommunityCard':
           const lastCard = game.thisRoundsCards[4];
           socket.emit(powerup, lastCard);
           break;
+        case 'ghostBet':
+          socket.emit(powerup, player.username);
         default:
           break;
       }
