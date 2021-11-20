@@ -347,12 +347,26 @@ var hideTarget = function() {
   $("#targetModal").hide();
 }
 
-var target = function(){
-  let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
-  let powerup = $('#target-radio').attr('powerup');
-  $('#target-radio').removeAttr('powerup');
-  $("#targetModal").hide();
-  socket.emit('powerUp', {powerup: powerup, target: selectedPlayerName});
+var target = function(btn){
+  let btnId = btn.id;
+  let btnNum = 1;
+  if (btnId == 'usePowerUp2') btnNum = 2;
+  socket.emit('getPowerUp', {
+    powerUpNum: btnNum,
+    listener: "submitPowerUp"
+  })
+}
+
+var showToolTip = (btnNum) => {
+  socket.emit('getPowerUp', {
+    powerUpNum: btnNum,
+    listener: "displayToolTip"
+  })
+}
+
+var hideToolTip = () => {
+  $("#powerUpToolTip").empty();
+  $("#powerUpToolTip").hide();
 }
 
 function renderCard(card) {
@@ -799,6 +813,35 @@ socket.on('displayPossibleMoves', function (data) {
   else $('#usernameRaise').hide();
 });
 
+socket.on('usePowerUp', function (data) {
+  // here data is the name of the powerup this player is trying to use
+  // todo: store this somewhere else maybe
+
+  // let hasTarget = ['showPlayerCard', 'swapWithPlayer'];
+  let powerup = data.name;
+  let hasTarget = data.hasTarget;
+  // have target
+  if (hasTarget) {
+    socket.emit('showSelectTarget', powerup);
+  } else {
+    // have no target
+    socket.emit('powerUp', {powerup:powerup});
+  }
+})
+
+socket.on('submitPowerUp', function(data) {
+  let powerUpName = data.name;
+  let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
+  $("#targetModal").hide();
+  socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName});
+})
+
+socket.on('displayToolTip', function(data) {
+  let powerUpTooltip = data.description;
+  $("#powerUpToolTip").html(powerUpTooltip);
+  $("#powerUpToolTip").show();
+})
+
 // client listener
 // get the card data and show it (modal? toast? image somewhere)
 socket.on('showCommunityCard', function (data) {
@@ -811,30 +854,41 @@ socket.on('showPlayerCard', function(data) {
   console.log(data);
 })
 
+socket.on('swapWithPlayer', function(data) {
+  $('#mycards').html(
+    data.map(function (c) {
+      return renderCard(c);
+    })
+  );
+})
+
 socket.on('selectTarget', function(data) {
   let names = data.playerNames;
-  let powerup = data.powerup;
   $("#target-radio").empty();
   names.forEach((name) => {
     $('<input type="radio" name="target" value="' + name + '" id="radio-' + name + '"><label for="radio-' + name + '">' + name + '</label>').appendTo("#target-radio");
   });
   $('input[name=target]:eq(0)').prop("checked", true);
-  $("#target-radio").attr('powerup',powerup);
   $("#targetModal").show();
 })
 
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {
-  // change this to server side check
-  let powerup = $("#usePowerUp" + num).attr('powerup');
-  // have target
-  if (powerup != 'showCommunityCard') {
-    socket.emit('showSelectTarget', powerup);
-  } else {
-    // have no target
-    socket.emit('powerUp', {powerup:powerup});
-  }
+  // let hasTarget = ['showPlayerCard', 'swapWithPlayer'];
+  // // change this to server side check
+  // let powerup = $("#usePowerUp" + num).attr('powerup');
+  // // have target
+  // if (hasTarget.includes(powerup)) {
+  //   socket.emit('showSelectTarget', powerup);
+  // } else {
+  //   // have no target
+  //   socket.emit('powerUp', {powerup:powerup});
+  // }
+  socket.emit('getPowerUp', {
+    powerUpNum: num,
+    listener: 'usePowerUp',
+  });
 }
 
 function renderSelf(data) {

@@ -86,7 +86,7 @@ const Game = function (name, host) {
     for (pn of this.players) {
       pn.allIn = false;
     }
-
+    this.thisRoundsCards = [];
     for (let i = 0; i < 5; i++) {
       this.thisRoundsCards.push(this.deck.dealRandomCard());
     }

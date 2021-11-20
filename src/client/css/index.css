@@ -157,3 +157,11 @@ code {
   background-color: white;
   border: black 1px solid;
 }
+
+#powerUpToolTip {
+  display: none;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+}

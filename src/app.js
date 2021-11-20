@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const socketio = require('socket.io');
 const Game = require('./classes/game.js');
+const PowerUp = require('./classes/powerup.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -146,6 +147,21 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on('getPowerUp', (data) => {
+    const game = rooms.find(
+      (r) => r.findPlayer(socket.id).socket.id === socket.id
+    );
+    const powerUpNum = data.powerUpNum;
+    const listener = data.listener;
+    if (game.roundInProgress) {
+      const player = game.findPlayer(socket.id);
+      const powerUpName = player.powerUps[powerUpNum - 1];
+      const powerUpObj = PowerUp[powerUpName];
+      // maybe add some warning here saying this powerup doesnt exist or something
+      if (powerUpName != '') socket.emit(listener, powerUpObj);
+    }
+  })
+
   // power up
   // listening to revealCommunityCard from client
   // send back card data to client showCommunityCard
@@ -173,6 +189,18 @@ io.on("connection", (socket) => {
         case "showPlayerCard":
           const revealCard = otherplayer.cards[0];
           socket.emit(powerup, revealCard);
+          break;
+        case "swapWithPlayer":
+          const thisPlayersCards = player.cards;
+          const targetPlayersCards = otherplayer.cards;
+          player.cards = targetPlayersCards;
+          otherplayer.cards = thisPlayersCards;
+          // this is to the player that used powerup
+          // reference:
+          // https://stackoverflow.com/questions/10058226/send-response-to-all-clients-except-sender
+          socket.emit(powerup, targetPlayersCards)
+          // this is to the target
+          socket.broadcast.to(otherplayer.socket.id).emit(powerup, thisPlayersCards);
         default:
           break;
       }
@@ -184,23 +212,32 @@ io.on("connection", (socket) => {
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
     if (game.roundInProgress) {
-      switch (powerup) {
-        // probably doesn't need switch
-        case "showPlayerCard":
-          let nameArr = [];
-          game.players.forEach((p) => {
-            nameArr.push(p.username);
-          });
-          // back to client with list of players and power up name
-          socket.emit("selectTarget", {
-            powerup: powerup,
-            playerNames: nameArr,
-          });
-        // const revealCard = otherplayer.cards[0];
-        // socket.emit(powerup, revealCard);
-        default:
-          break;
-      }
+      const player = game.findPlayer(socket.id);
+      let nameArr = [];
+      game.players.forEach((p) => {
+        if (player != p) nameArr.push(p.username);
+      });
+      // back to client with list of players and power up name
+      socket.emit("selectTarget", {
+        playerNames: nameArr,
+      });
+      // switch (powerup) {
+      //   // probably doesn't need switch
+      //   case "showPlayerCard":
+      //     let nameArr = [];
+      //     game.players.forEach((p) => {
+      //       nameArr.push(p.username);
+      //     });
+      //     // back to client with list of players and power up name
+      //     socket.emit("selectTarget", {
+      //       powerup: powerup,
+      //       playerNames: nameArr,
+      //     });
+      //   // const revealCard = otherplayer.cards[0];
+      //   // socket.emit(powerup, revealCard);
+      //   default:
+      //     break;
+      // }
     }
   });
 });
