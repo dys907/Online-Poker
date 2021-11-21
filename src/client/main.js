@@ -4,8 +4,32 @@ $(document).ready(function () {
   $('.tooltipped').tooltip({ delay: 50 });
 });
 
+const iceServers = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+  ],
+}
+
+var peerConnections = [];
 var socket = io();
 var gameInfo = null;
+var roomId;
+
+function setUpPeer(peerUuid, displayName, initCall = false) {
+  peerConnections[peerUuid] = { 'displayName': displayName, 'pc': new RTCPeerConnection(peerConnectionConfig) };
+  peerConnections[peerUuid].pc.onicecandidate = event => gotIceCandidate(event, peerUuid);
+  peerConnections[peerUuid].pc.ontrack = event => gotRemoteStream(event, peerUuid);
+  peerConnections[peerUuid].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, peerUuid);
+  peerConnections[peerUuid].pc.addStream(localStream);
+ 
+  if (initCall) {
+    peerConnections[peerUuid].pc.createOffer().then(description => createdDescription(description, peerUuid)).catch(errorHandler);
+  }
+}
 
 socket.on('playerDisconnected', function (data) {
   Materialize.toast(data.player + ' disconnected.', 4000);
@@ -183,8 +207,19 @@ socket.on('gameBegin', function (data) {
     alert('Error - invalid game.');
   } else {
     $('#gameDiv').show();
+    socket.emit('startCall', roomId);
   }
 });
+
+socket.on('startCall',  async (peerUuid) => {
+  console.log('Socket event callback: startCall');
+
+  rtcPeerConnection = new RTCPeerConnection(iceServers);
+  addLocalTracks(rtcPeerConnection);
+  rtcPeerConnection.ontrack = setRemoteStream;
+  rtcPeerConnection.onicecandidate = sendIceCandidate;
+  await createOffer(rtcPeerConnection);
+})
 
 function playNext() {
   socket.emit('startNextRound', {});
@@ -289,6 +324,8 @@ var joinRoom = function () {
     $('#hostButton').removeClass('disabled');
     $('#hostButton').on('click');
   } else {
+    // Save the room ID globally.
+    roomId = $('#code-field').val();
     socket.emit('join', {
       code: $('#code-field').val(),
       username: $('#joinName-field').val(),

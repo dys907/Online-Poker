@@ -240,6 +240,22 @@ io.on("connection", (socket) => {
       // }
     }
   });
+  socket.on('startCall', (roomId, peerUuid) => {
+    console.log(`Broadcasting start_call event to peers in room ${roomId}`);
+    socket.broadcast.to(roomId).emit('startCall', peerUuid);
+  });
+  socket.on('webrtc_offer', (event) => {
+    console.log(`Broadcasting webrtc_offer event to peers in room ${event.roomId}`);
+    socket.broadcast.to(event.roomId).emit('webrtc_offer', event.sdp);
+  });
+  socket.on('webrtc_answer', (event) => {
+    console.log(`Broadcasting webrtc_answer event to peers in room ${event.roomId}`);
+    socket.broadcast.to(event.roomId).emit('webrtc_answer', event.sdp);
+  });
+  socket.on('webrtc_ice_candidate', (event) => {
+    console.log(`Broadcasting webrtc_ice_candidate event to peers in room ${event.roomId}`);
+    socket.broadcast.to(event.roomId).emit('webrtc_ice_candidate', event);
+  });
 });
 
 

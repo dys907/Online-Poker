@@ -26,6 +26,9 @@
 	<div id="gameDiv">
 		<h4 class="white-text">Texas Hold 'Em Game</h4>
 		<div class="row">
+			<div id="self-video-container" class="video-position" style="display: none">
+				<video id=”local-video” autoplay=”autoplay”></video>
+			</div>
 			<div class="col s12 m3">
 				<div id="playerInformationCard" class="card green darken-2">
 					<div class="card-content white-text">
@@ -81,9 +84,11 @@
 				</div>
 			</div>
 		</div>
+
 		<div class="row">
 			<div id="opponentCards"></div>
 		</div>
+		<video id=”remote-video” autoplay=”autoplay”></video>
 	</div>
 	<div id="mainContent">
 		<div class=" valign-wrapper row login-box">
