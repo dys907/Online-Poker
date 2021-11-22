@@ -208,9 +208,12 @@ io.on("connection", (socket) => {
             const targetPlayersStack = otherplayer.money;
             player.money = targetPlayersStack;
             otherplayer.money = thisPlayersStack;
-            //socket transfer of chips.
-            socket.emit(powerup,targetPlayersStack);
-            socket.broadcast.to(otherplayer.socket.id).emit(powerup,thisPlayersStack);
+            //rerender the game for all players to update chip count
+            //socket.emit('message','player 1 swapped with player 2 etc')
+            game.rerender();
+            //socket transfer of chips. (render does all of this)
+            //socket.emit(powerup,targetPlayersStack);
+            //socket.broadcast.to(otherplayer.socket.id).emit(powerup,thisPlayersStack);
             break;
         default:
           break;
