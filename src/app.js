@@ -79,7 +79,8 @@ io.on("connection", (socket) => {
     );
     if (game.roundInProgress) {
       const possibleMoves = game.getPossibleMoves(socket);
-      socket.emit("displayPossibleMoves", possibleMoves);
+      const player = game.findPlayer(socket.id);
+      socket.emit("displayPossibleMoves", {moves: possibleMoves, hasTimer: player.hasTimer});
     }
   });
 
@@ -217,6 +218,8 @@ io.on("connection", (socket) => {
           player.cards = redealtCards;
           socket.emit('swapWithPlayer', redealtCards);
           break;
+        case 'nozdormu':
+          otherplayer.hasTimer = true;
         default:
           break;
       }

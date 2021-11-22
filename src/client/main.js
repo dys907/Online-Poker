@@ -797,7 +797,8 @@ function updateRaiseModal() {
   socket.emit('raiseModalData', {});
 }
 
-socket.on('displayPossibleMoves', function (data) {
+socket.on('displayPossibleMoves', function (d) {
+  let data = d.moves;
   if (data.fold == 'yes') $('#usernameFold').show();
   else $('#usernameHide').hide();
   if (data.check == 'yes') $('#usernameCheck').show();
@@ -811,6 +812,8 @@ socket.on('displayPossibleMoves', function (data) {
   } else $('#usernameCall').hide();
   if (data.raise == 'yes') $('#usernameRaise').show();
   else $('#usernameRaise').hide();
+  let hasTimer = d.hasTimer;
+  if (hasTimer) setTimeout(() => fold(), 15000);
 });
 
 socket.on('usePowerUp', function (data) {
@@ -870,6 +873,10 @@ socket.on('selectTarget', function(data) {
   });
   $('input[name=target]:eq(0)').prop("checked", true);
   $("#targetModal").show();
+})
+
+socket.on('nozdormu', function(data) {
+  hasTimer = true;
 })
 
 // starting point from client

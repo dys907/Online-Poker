@@ -85,6 +85,7 @@ const Game = function (name, host) {
     this.log('deck len' + this.deck.cards.length);
     for (pn of this.players) {
       pn.allIn = false;
+      pn.hasTimer = false;
     }
     this.thisRoundsCards = [];
     for (let i = 0; i < 5; i++) {
