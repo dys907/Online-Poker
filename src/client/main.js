@@ -344,15 +344,15 @@ var raise = function () {
 };
 
 var hideTarget = function() {
+  $("#confirmTarget").removeAttr('powerUpNum');
   $("#targetModal").hide();
 }
 
-var target = function(btn){
-  let btnId = btn.id;
-  let btnNum = 1;
-  if (btnId == 'usePowerUp2') btnNum = 2;
+var target = function(){
+  let powerUpNum = $("#confirmTarget").attr("powerUpNum");
+  $("#confirmTarget").removeAttr('powerUpNum');
   socket.emit('getPowerUp', {
-    powerUpNum: btnNum,
+    powerUpNum: powerUpNum,
     listener: "submitPowerUp"
   })
 }
@@ -885,6 +885,7 @@ function usePowerUp(num) {
   //   // have no target
   //   socket.emit('powerUp', {powerup:powerup});
   // }
+  $("#confirmTarget").attr("powerUpNum", num);
   socket.emit('getPowerUp', {
     powerUpNum: num,
     listener: 'usePowerUp',

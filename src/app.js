@@ -201,6 +201,7 @@ io.on("connection", (socket) => {
           socket.emit(powerup, targetPlayersCards)
           // this is to the target
           socket.broadcast.to(otherplayer.socket.id).emit(powerup, thisPlayersCards);
+          break;
           case "swapChipsWithPlayer":
             //dylan
             const thisPlayersStack = player.money;
@@ -210,6 +211,7 @@ io.on("connection", (socket) => {
             //socket transfer of chips.
             socket.emit(powerup,targetPlayersStack);
             socket.broadcast.to(otherplayer.socket.id).emit(powerup,thisPlayersStack);
+            break;
         default:
           break;
       }
