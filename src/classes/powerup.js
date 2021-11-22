@@ -31,6 +31,12 @@ const PowerUp = {
         name: 'swapChipsWithPlayer',
         hasTarget: true,
         description: 'Swaps your chip stack with another targetted player'
+    },
+    redealOwnHand:
+    {
+        name: 'redealOwnHand',
+        hasTarget: false,
+        description: 'Deals a new hand for yourself'
     }
 };
 

@@ -202,19 +202,21 @@ io.on("connection", (socket) => {
           // this is to the target
           socket.broadcast.to(otherplayer.socket.id).emit(powerup, thisPlayersCards);
           break;
-          case "swapChipsWithPlayer":
-            //dylan
-            const thisPlayersStack = player.money;
-            const targetPlayersStack = otherplayer.money;
-            player.money = targetPlayersStack;
-            otherplayer.money = thisPlayersStack;
-            //rerender the game for all players to update chip count
-            //socket.emit('message','player 1 swapped with player 2 etc')
-            game.rerender();
-            //socket transfer of chips. (render does all of this)
-            //socket.emit(powerup,targetPlayersStack);
-            //socket.broadcast.to(otherplayer.socket.id).emit(powerup,thisPlayersStack);
-            break;
+        case "swapChipsWithPlayer":
+          //dylan
+          const thisPlayersStack = player.money;
+          const targetPlayersStack = otherplayer.money;
+          player.money = targetPlayersStack;
+          otherplayer.money = thisPlayersStack;
+          //rerender the game for all players to update chip count
+          //socket.emit('message','player 1 swapped with player 2 etc')
+          game.rerender();
+          break;
+        case "redealOwnHand":
+          let redealtCards =[game.deck.dealRandomCard(),game.deck.dealRandomCard()];
+          player.cards = redealtCards;
+          socket.emit('swapWithPlayer', redealtCards);
+          break;
         default:
           break;
       }
