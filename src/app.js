@@ -157,7 +157,8 @@ io.on("connection", (socket) => {
     if (game.roundInProgress) {
       const player = game.findPlayer(socket.id);
       const powerUpName = player.powerUps[powerUpNum - 1];
-      const powerUpObj = PowerUp[powerUpName];
+      let powerUpObj;
+      if (powerUpName != '') powerUpObj = PowerUp[powerUpName];
       // maybe add some warning here saying this powerup doesnt exist or something
       if (powerUpName != '') socket.emit(listener, powerUpObj);
     }
@@ -175,14 +176,24 @@ io.on("connection", (socket) => {
     if (game.roundInProgress) {
       //let powerup = '';
       const player = game.findPlayer(socket.id);
-
+      let otherplayer;
       //testing
-      const otherplayer = game.findPlayerWithName(target);
+      if (target) otherplayer = game.findPlayerWithName(target);
       // if (num == 1) {
       //   powerup = player.powerUps[0];
       // } else {
       //   powerup = player.powerUps[1];
       // }
+      let time = new Date();
+      let fulltime = time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds();
+      let powerUpName = PowerUp[powerup].logName;
+      // broadcast to everyone
+      io.emit("updatePowerUpLog", {
+        user: player.username,
+        target: target? otherplayer.username : null,
+        powerUpName: powerUpName,
+        time: fulltime,
+      })
 
       switch (powerup) {
         case "showCommunityCard":

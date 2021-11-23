@@ -183,6 +183,7 @@ socket.on('gameBegin', function (data) {
     alert('Error - invalid game.');
   } else {
     $('#gameDiv').show();
+    $("#powerUpLogContainer").show();
   }
 });
 
@@ -807,6 +808,17 @@ socket.on('displayToolTip', function(data) {
   let powerUpTooltip = data.description;
   $("#powerUpToolTip").html(powerUpTooltip);
   $("#powerUpToolTip").show();
+})
+
+socket.on('updatePowerUpLog', function(data) {
+  let user = data.user;
+  let target = data.target;
+  let powerUpName = data.powerUpName;
+  let time = data.time;
+  let fullMsg = time + ' - ' + user + ' used power up "' + powerUpName + '"'
+  if (target) fullMsg += ' on ' + target;
+  $("#powerUpLogText").append("<br/>" + fullMsg);
+  $("#powerUpLog").scrollTop($("#powerUpLog")[0].scrollHeight);
 })
 
 // client listener
