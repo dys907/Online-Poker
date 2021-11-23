@@ -44,10 +44,14 @@ const Deck = function () {
   };
 
   this.dealRandomCard = () => {
-    const index = Math.floor(Math.random() * this.cards.length);
-    value = this.cards[index];
-    this.cards.splice(index, 1);
-    return value;
+    if(this.cards.length > 1) {
+      const index = Math.floor(Math.random() * this.cards.length);
+      value = this.cards[index];
+      this.cards.splice(index, 1);
+      return value;
+    } else {
+      return null;
+    }
   };
 };
 

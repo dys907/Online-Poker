@@ -872,6 +872,11 @@ socket.on('selectTarget', function(data) {
   $("#targetModal").show();
 })
 
+//receiving powerup signal dylan
+socket.on('givePlayerPowerUp', (data)=> {
+  console.log("tet");
+})
+
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {

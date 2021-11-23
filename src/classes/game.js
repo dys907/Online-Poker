@@ -83,6 +83,10 @@ const Game = function (name, host) {
     this.roundData.bets = [];
     this.dealCards();
     this.log('deck len' + this.deck.cards.length);
+    //every other round get a powerup dylan
+    if((this.roundNum + 1) % 2 == 0) {
+      this.dealPowerUp();
+    }
     for (pn of this.players) {
       pn.allIn = false;
     }
@@ -1039,6 +1043,14 @@ const Game = function (name, host) {
     }
     return possibleMoves;
   };
+  //deal powerup dylan
+  this.dealPowerUp = () => {
+    this.emitPlayers('givePlayerPowerUp', {
+      players: this.players.map((p) => {
+        return p;
+      }),
+    });
+}
 };
 
 module.exports = Game;

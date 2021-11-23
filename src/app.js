@@ -213,9 +213,13 @@ io.on("connection", (socket) => {
           game.rerender();
           break;
         case "redealOwnHand":
-          let redealtCards =[game.deck.dealRandomCard(),game.deck.dealRandomCard()];
-          player.cards = redealtCards;
-          socket.emit('swapWithPlayer', redealtCards);
+          let card1 = game.deck.dealRandomCard();
+          let card2 = game.deck.dealRandomCard();
+          if (card1 && card2) {
+            let redealtCards =[card1,card2];
+            player.cards = redealtCards;
+            socket.emit('swapWithPlayer', redealtCards);
+          }
           break;
         default:
           break;
@@ -256,6 +260,16 @@ io.on("connection", (socket) => {
       // }
     }
   });
+
+  //deal cards
+  socket.on('givePlayerPowerUp', (data) =>{
+      //generate powerup
+  //const pu = new PowerUp;
+  //for (const key in pu) console.log(pu[key].weight);
+    console.log("tet");
+  })
+
+
 });
 
 
