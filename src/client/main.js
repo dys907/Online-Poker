@@ -343,6 +343,32 @@ var raise = function () {
   }
 };
 
+var hideTarget = function() {
+  $("#confirmTarget").removeAttr('powerUpNum');
+  $("#targetModal").hide();
+}
+
+var target = function(){
+  let powerUpNum = $("#confirmTarget").attr("powerUpNum");
+  $("#confirmTarget").removeAttr('powerUpNum');
+  socket.emit('getPowerUp', {
+    powerUpNum: powerUpNum,
+    listener: "submitPowerUp"
+  })
+}
+
+var showToolTip = (btnNum) => {
+  socket.emit('getPowerUp', {
+    powerUpNum: btnNum,
+    listener: "displayToolTip"
+  })
+}
+
+var hideToolTip = () => {
+  $("#powerUpToolTip").empty();
+  $("#powerUpToolTip").hide();
+}
+
 function renderCard(card) {
   if (card.suit == '♠' || card.suit == '♣')
     return (
@@ -735,7 +761,8 @@ function updateRaiseModal() {
   socket.emit('raiseModalData', {});
 }
 
-socket.on('displayPossibleMoves', function (data) {
+socket.on('displayPossibleMoves', function (d) {
+  let data = d.moves;
   if (data.fold == 'yes') $('#usernameFold').show();
   else $('#usernameHide').hide();
   if (data.check == 'yes') $('#usernameCheck').show();
@@ -749,7 +776,38 @@ socket.on('displayPossibleMoves', function (data) {
   } else $('#usernameCall').hide();
   if (data.raise == 'yes') $('#usernameRaise').show();
   else $('#usernameRaise').hide();
+  let hasTimer = d.hasTimer;
+  if (hasTimer) setTimeout(() => fold(), 15000);
 });
+
+socket.on('usePowerUp', function (data) {
+  // here data is the name of the powerup this player is trying to use
+  // todo: store this somewhere else maybe
+
+  // let hasTarget = ['showPlayerCard', 'swapWithPlayer'];
+  let powerup = data.name;
+  let hasTarget = data.hasTarget;
+  // have target
+  if (hasTarget) {
+    socket.emit('showSelectTarget', powerup);
+  } else {
+    // have no target
+    socket.emit('powerUp', {powerup:powerup});
+  }
+})
+
+socket.on('submitPowerUp', function(data) {
+  let powerUpName = data.name;
+  let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
+  $("#targetModal").hide();
+  socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName});
+})
+
+socket.on('displayToolTip', function(data) {
+  let powerUpTooltip = data.description;
+  $("#powerUpToolTip").html(powerUpTooltip);
+  $("#powerUpToolTip").show();
+})
 
 // client listener
 // get the card data and show it (modal? toast? image somewhere)
@@ -757,14 +815,57 @@ socket.on('showCommunityCard', function (data) {
   console.log(data);
 })
 
-socket.on('ghostBet', function(data) {
+// client listener
+// get the card and show it
+socket.on('showPlayerCard', function(data) {
   console.log(data);
+})
+
+socket.on('swapWithPlayer', function(data) {
+  $('#mycards').html(
+    data.map(function (c) {
+      return renderCard(c);
+    })
+  );
+})
+
+socket.on('selectTarget', function(data) {
+  let names = data.playerNames;
+  $("#target-radio").empty();
+  names.forEach((name) => {
+    $('<input type="radio" name="target" value="' + name + '" id="radio-' + name + '"><label for="radio-' + name + '">' + name + '</label>').appendTo("#target-radio");
+  });
+  $('input[name=target]:eq(0)').prop("checked", true);
+  $("#targetModal").show();
+})
+
+//receiving powerup signal dylan
+socket.on('givePlayerPowerUp', (data)=> {
+  console.log("tet");
+});
+
+socket.on('nozdormu', function(data) {
+  hasTimer = true;
 })
 
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {
-  socket.emit('powerUp', num);
+  // let hasTarget = ['showPlayerCard', 'swapWithPlayer'];
+  // // change this to server side check
+  // let powerup = $("#usePowerUp" + num).attr('powerup');
+  // // have target
+  // if (hasTarget.includes(powerup)) {
+  //   socket.emit('showSelectTarget', powerup);
+  // } else {
+  //   // have no target
+  //   socket.emit('powerUp', {powerup:powerup});
+  // }
+  $("#confirmTarget").attr("powerUpNum", num);
+  socket.emit('getPowerUp', {
+    powerUpNum: num,
+    listener: 'usePowerUp',
+  });
 }
 
 function renderSelf(data) {

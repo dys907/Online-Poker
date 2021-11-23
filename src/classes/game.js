@@ -85,8 +85,9 @@ const Game = function (name, host) {
     this.log('deck len' + this.deck.cards.length);
     for (pn of this.players) {
       pn.allIn = false;
+      pn.hasTimer = false;
     }
-
+    this.thisRoundsCards = [];
     for (let i = 0; i < 5; i++) {
       this.thisRoundsCards.push(this.deck.dealRandomCard());
     }
@@ -752,6 +753,15 @@ const Game = function (name, host) {
     }
     return { socket: { id: 0 } };
   };
+
+  this.findPlayerWithName = (name) => {
+    for (let pn = 0; pn < this.getNumPlayers(); pn++) {
+      if (this.players[pn].username === name) {
+        return this.players[pn];
+      }
+    }
+    return { socket: { id: 0 } };
+  }
 
   this.disconnectPlayer = (player) => {
     this.disconnectedPlayers.push(player);
