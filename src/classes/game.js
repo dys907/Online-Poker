@@ -1044,14 +1044,6 @@ const Game = function (name, host) {
     }
     return possibleMoves;
   };
-  //deal powerup dylan
-  this.dealPowerUp = () => {
-    this.emitPlayers('givePlayerPowerUp', {
-      players: this.players.map((p) => {
-        return p;
-      }),
-    });
-}
 };
 
 module.exports = Game;
