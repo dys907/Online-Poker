@@ -860,6 +860,16 @@ socket.on('nozdormu', function(data) {
   hasTimer = true;
 })
 
+socket.on('forceDC', function(data) {
+  Materialize.toast(data + " has disconnected you", 4000);
+  $("#gameDiv").remove();
+  $("#powerUpLogContainer").remove();
+  $(".page-footer").remove();
+  setTimeout(() => {
+    location.reload();
+  }, 5000);
+})
+
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {

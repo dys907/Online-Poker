@@ -53,8 +53,16 @@ const PowerUp = {
         name: 'nozdormu',
         logName: "Nozdormu - Limit a player's turn to 15 seconds",
         hasTarget: true,
-        description: 'Force a player to make a move within 15 seconds, or force this player to fold. Hearthstone reference.',
+        description: 'Force a player to make a move within 15 seconds, or force this player to fold. Hearthstone reference',
         weight:4
+    },
+    forceDC:
+    {
+        name: 'forceDC',
+        logName: "Force a player to disconnect",
+        hasTarget: true,
+        description: 'Force a player to disconnect',
+        weight:1
     }
 };
 

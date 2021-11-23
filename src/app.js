@@ -242,6 +242,10 @@ io.on("connection", (socket) => {
         case 'nozdormu':
           otherplayer.hasTimer = true;
           break;
+        case 'forceDC':
+          game.disconnectPlayer(otherplayer);
+          socket.broadcast.to(otherplayer.socket.id).emit(powerup, player.username);
+          break;
         default:
           break;
       }
