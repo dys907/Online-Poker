@@ -42,6 +42,13 @@ const PowerUp = {
         hasTarget: false,
         description: 'Deals a new hand for yourself',
         weight:6
+    },
+    nozdormu:
+    {
+        name: 'nozdormu',
+        hasTarget: true,
+        description: 'Force a player to make a move within 15 seconds, or force this player to fold. Hearthstone reference.',
+        weight:4
     }
 };
 
