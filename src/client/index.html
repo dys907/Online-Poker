@@ -24,65 +24,48 @@
 		</div>
 	</header>
 	<div id="gameDiv">
-		<h4 class="white-text">Texas Hold 'Em Game</h4>
-		<div class="row">
-			<div class="col s12 m3">
-				<div id="playerInformationCard" class="card green darken-2">
+		<h5 class="white-text" id="table-title" class="card-title"></h5>
+		<div class="container">
+			<div id="opponentCards"></div>
+			<div id="poker-table" style="background-image: url('img/poker_table.png');">
+				<div id="communityCards"></div>
+			</div>
+			<div id="button_info_container">
+				<div id="playerInformationCard" class="custom-card green darken-2">
 					<div class="card-content white-text">
-						<span class="card-title" id="usernamesCards"></span>
+						<span class="card-title" id="usernamesCards" style="font-size: 12px; line-height: 0;"></span>
 						<div id="mycards"></div>
 					</div>
 				</div>
-			</div>
-			<div class="col s12 m2">
-				<div class="card green darken-2">
-					<div class="card-content white-text center-align">
+				<fieldset id="buttons" style="background-color: rgba(211, 211, 211, 0.5);">
+					<legend style="color: white;">&nbsp;Buttons&nbsp;</legend>
+					<div class="buttons-container">
 						<span class="card-title center-align" id="usernamesMoney"></span>
 						<div id="blindStatus"></div>
 						<div id="status"></div>
-						<br />
 						<div id="playNext"></div>
 						<button onClick=fold() id="usernameFold" class="btn white black-text menuButtons">Fold</button>
-						<br />
 						<button onClick=check() id="usernameCheck" class="btn white black-text menuButtons">Check</button>
-						<br />
 						<button href="#betModal" onClick=updateBetModal() id="usernameBet"
 							class="btn white black-text modal-trigger menuButtons">Bet</button>
-						<br />
 						<button onClick=call() id="usernameCall" class="btn white black-text menuButtons">Call</button>
-						<br />
 						<button href="#raiseModal" onClick=updateRaiseModal() id="usernameRaise"
 							class="btn white black-text modal-trigger menuButtons">Raise</button>
-						<br />
-						<!--dynamically generate these buttons? once a powerup is given to this player-->
-						<div id='powerUpContainer'>
-							<button onClick=usePowerUp(1) onmouseover=showToolTip(1) onmouseout=hideToolTip() id="usePowerUp1"
+
+					</div>
+					<fieldset class="power-up-container">
+						<legend style="color: white;">&nbsp;Power Ups&nbsp;</legend>
+												<button onClick=usePowerUp(1) onmouseover=showToolTip(1) onmouseout=hideToolTip() id="usePowerUp1"
 								class="btn white black-text">Reveal</button>
 							<br />
 						
 							<button onClick=usePowerUp(2) onmouseover=showToolTip(2) onmouseout=hideToolTip() id="usePowerUp2"
 								class="btn white black-text">Reveal</button>
 							<br />
-							<span id="powerUpToolTip"></span>
-						</div>
-
-
-
-					</div>
-				</div>
+							<span id="powerUpToolTip"></span>	
+          </fieldset>
+				</fieldset>
 			</div>
-			<div class="col s12 m7">
-				<div class="card green darken-2">
-					<div class="card-content white-text">
-						<span id="table-title" class="card-title"></span>
-
-						<div id="communityCards"></div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="row">
-			<div id="opponentCards"></div>
 		</div>
 	</div>
 	<div id="mainContent">
@@ -216,7 +199,7 @@
 		</div>
 	</div>
 	<footer class="page-footer white">
-		<div class="container footer-c">
+		<div class="container footer-c footer-move">
 			<b>© 2020 - Peter Wu. <a href="https://github.com/ptwu/distributed-texasholdem">GitHub Repository</a></b><br><br>
 	</footer>
 

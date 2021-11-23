@@ -27,7 +27,6 @@
     "socket.io": "^2.3.0"
   },
   "engines": {
-
     "yarn": "^1.19"
   },
   "devDependencies": {

@@ -182,7 +182,7 @@ const Game = function (name, host) {
         myStatus: this.players[pn].getStatus(),
         myBlind: this.players[pn].getBlind(),
         roundInProgress: this.roundInProgress,
-        buyIns: this.players[pn].buyIns,
+        buyIns: this.players[pn].buyIns,  
       });
     }
   };

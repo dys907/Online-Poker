@@ -175,6 +175,7 @@ io.on("connection", (socket) => {
     if (game.roundInProgress) {
       //let powerup = '';
       const player = game.findPlayer(socket.id);
+
       //testing
       const otherplayer = game.findPlayerWithName(target);
       // if (num == 1) {
@@ -182,10 +183,15 @@ io.on("connection", (socket) => {
       // } else {
       //   powerup = player.powerUps[1];
       // }
+
       switch (powerup) {
         case "showCommunityCard":
           const lastCard = game.thisRoundsCards[4];
           socket.emit(powerup, lastCard);
+          break;
+
+        case 'ghostBet':
+          socket.emit(powerup, player.username);
           break;
         case "showPlayerCard":
           const revealCard = otherplayer.cards[0];
@@ -224,6 +230,7 @@ io.on("connection", (socket) => {
           break;
         case 'nozdormu':
           otherplayer.hasTimer = true;
+          break;
         default:
           break;
       }
