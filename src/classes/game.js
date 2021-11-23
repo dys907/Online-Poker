@@ -83,10 +83,6 @@ const Game = function (name, host) {
     this.roundData.bets = [];
     this.dealCards();
     this.log('deck len' + this.deck.cards.length);
-    //every other round get a powerup dylan
-    if((this.roundNum + 1) % 2 == 0) {
-      this.dealPowerUp();
-    }
     for (pn of this.players) {
       pn.allIn = false;
       pn.hasTimer = false;
