@@ -3,7 +3,21 @@ $(document).ready(function () {
   $('.modal-trigger').leanModal();
   $('.tooltipped').tooltip({ delay: 50 });
 });
+// WebRTC Specifics
+const localVideoComponent = document.getElementById('local-video')
+const remoteVideoComponent = document.getElementById('remote-video')
+const mediaConstraints = {
+  audio: true,
+  video: { width: 1280, height: 720 },
+}
+let sessionDescription
+let localUuid;
+let localStream;
+var roomId;
+var serverConnection;
+var peerConnections = {};
 
+// Free STUN servers
 const iceServers = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -14,22 +28,8 @@ const iceServers = {
   ],
 }
 
-var peerConnections = [];
 var socket = io();
 var gameInfo = null;
-var roomId;
-
-function setUpPeer(peerUuid, displayName, initCall = false) {
-  peerConnections[peerUuid] = { 'displayName': displayName, 'pc': new RTCPeerConnection(peerConnectionConfig) };
-  peerConnections[peerUuid].pc.onicecandidate = event => gotIceCandidate(event, peerUuid);
-  peerConnections[peerUuid].pc.ontrack = event => gotRemoteStream(event, peerUuid);
-  peerConnections[peerUuid].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, peerUuid);
-  peerConnections[peerUuid].pc.addStream(localStream);
- 
-  if (initCall) {
-    peerConnections[peerUuid].pc.createOffer().then(description => createdDescription(description, peerUuid)).catch(errorHandler);
-  }
-}
 
 socket.on('playerDisconnected', function (data) {
   Materialize.toast(data.player + ' disconnected.', 4000);
@@ -124,6 +124,7 @@ socket.on('joinRoom', function (data) {
     );
     $('#hostButton').removeClass('disabled');
   } else {
+
     $('#joinModalContent').html(
       '<h5>' +
         data.host +
@@ -207,19 +208,137 @@ socket.on('gameBegin', function (data) {
     alert('Error - invalid game.');
   } else {
     $('#gameDiv').show();
-    socket.emit('startCall', roomId);
   }
 });
 
 socket.on('startCall',  async (peerUuid) => {
-  console.log('Socket event callback: startCall');
+  // Possibly should be when the user joins the room, as 
+  // no networking is needed to establish this part.
+  console.log('Setting local stream');
+  await setLocalStream(mediaConstraints);
 
-  rtcPeerConnection = new RTCPeerConnection(iceServers);
+  console.log('Socket event callback: startCall');
+  rtcPeerConnection = new RTCPeerConnection();
   addLocalTracks(rtcPeerConnection);
   rtcPeerConnection.ontrack = setRemoteStream;
   rtcPeerConnection.onicecandidate = sendIceCandidate;
   await createOffer(rtcPeerConnection);
 })
+
+// -----------------------------------------------------
+// ------------------- Start of webRTC -----------------
+// -----------------------------------------------------
+
+//Creates the WebRTC handshake offer.
+async function createOffer() {
+  try {
+    
+    setUpPeer(socket.id, localName, true);
+    sessionDescription = await peerConnections[socketId].pc.createOffer();
+    peerConnections[socket.id].setLocalDescription(sessionDescription);
+
+    socket.emit('webrtc_offer',{
+      type: "webrtc_offer",
+      sdp: peerConnections[socket.id].description,
+      requesterSocketId: socket.id
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function setUpPeer(socketId, displayName, initCall = false) {
+  peerConnections[socketId] = { 'displayName': displayName, 'pc': new RTCPeerConnection(iceServers) };
+  peerConnections[socketId].pc.onicecandidate = event => gotIceCandidate(event, socketId);
+  peerConnections[socketId].pc.ontrack = event => gotRemoteStream(event, socketId);
+  peerConnections[socketId].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, socketId);
+  localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, stream));
+}
+
+function gotIceCandidate(event, targetSocketId) {
+  if (event.candidate != null) {
+    socket.emit('webrtc_ice_candidate', {
+      ice: event.candidate,
+      fromSocketId: socket.id,
+      dest: targetSocketId
+    });
+  }
+}
+
+// Handles untargeted calls
+socket.on('webrtc_ice_candidate', (event) => {
+  if (event.dest == socket.id) {
+    peerConnections[event.fromSocketId].pc.addIceCandidate(new RTCIceCandidate(event.ice)).catch(errorHandler);
+  }
+});
+
+socket.on('webrtc_offer', async (event) => {
+  console.log('Socket event callback: webrtc_offer')
+  if (event.requesterSocketId != socket.id) {
+    // Set up remote
+    setUpPeer(event.requesterSocketId, event.requesterDisplayName);
+    //Create answer
+    let sessionDescription = await peerConnections[socket.id].createAnswer();
+    peerConnections[event.requesterSocketId].setLocalDescription(sessionDescription);
+    
+    socket.emit('webrtc_answer', {
+      type: 'webrtc_answer',
+      sdp: sessionDescription,
+      answererId: socket.id,
+      targetId: targetId
+    })
+  }
+})
+
+// Better to broadcast only to the desired person.
+// Could use player.emit to target emit only to 1 person.
+socket.on('webrtc_answer', (event) => {
+  console.log('Socket event callback: webrtc_answer')
+  if (event.targetId == socket.id) {
+    setUpPeer(event.answererId, event.answererName);
+  }
+  peerConnections[socketId].pc.setRemoteDescription(new RTCSessionDescription(event));
+
+})
+
+async function setLocalStream(mediaConstraints) {
+  let stream
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
+  } catch (error) {
+    console.error('Could not get user media', error)
+  }
+
+  localStream = stream
+  localVideoComponent.srcObject = stream
+}
+
+function addLocalTracks(rtcPeerConnection) {
+  localStream.getTracks().forEach((track) => {
+    console.log("rctcon " + rtcPeerConnection);
+    rtcPeerConnection.addTrack(track, localStream)
+  })
+}
+function setRemoteStream(event) {
+  remoteStream = event.stream;
+  this.setState({ remStream : event.streams[0]});
+}
+
+function sendIceCandidate(event) {
+  if (event.candidate) {
+    socket.emit('webrtc_ice_candidate', {
+      label: event.candidate.sdpMLineIndex,
+      candidate: event.candidate.candidate,
+    })
+  }
+}
+
+function errorHandler(error) {
+  console.log(error);
+}
+// -----------------------------------------------------
+// ------------------ Cutoff for webRTC ----------------
+// -----------------------------------------------------
 
 function playNext() {
   socket.emit('startNextRound', {});
@@ -324,8 +443,26 @@ var joinRoom = function () {
     $('#hostButton').removeClass('disabled');
     $('#hostButton').on('click');
   } else {
+    // ---------------------------------
+    // Probably don't put these here.
+    // ---------------------------------
     // Save the room ID globally.
     roomId = $('#code-field').val();
+    // Save display name globally.
+    localName = $('#joinName-field').val();
+
+    //Set the local stream
+    if (navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia(mediaConstraints)
+        .then(stream => {
+          localStream = stream;
+        }).catch(errorHandler);
+        //Instantiate local rtcPeerConnection
+    } else {
+      alert('Your browser does not support getUserMedia API');
+    }
+    //Start everything webRTC
+    await createOffer();
     socket.emit('join', {
       code: $('#code-field').val(),
       username: $('#joinName-field').val(),
