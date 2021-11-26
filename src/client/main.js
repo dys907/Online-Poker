@@ -250,11 +250,14 @@ async function createOffer() {
 function setUpPeer(socketId, displayName, initCall = false) {
   peerConnections[socketId] = { 'displayName': displayName, 'pc': new RTCPeerConnection(iceServers) };
   peerConnections[socketId].pc.onicecandidate = event => gotIceCandidate(event, socketId);
-  peerConnections[socketId].pc.ontrack = event => gotRemoteStream(event, socketId);
+  peerConnections[socketId].pc.ontrack = event => setCameraPortrait(event, socketId);
   peerConnections[socketId].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, socketId);
   localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, stream));
 }
 
+function setCameraPortrait(event, socketId) {
+  
+}
 function gotIceCandidate(event, targetSocketId) {
   if (event.candidate != null) {
     socket.emit('webrtc_ice_candidate', {
