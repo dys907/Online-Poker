@@ -104,6 +104,10 @@ io.on("connection", (socket) => {
     );
     if (game != undefined) {
       if (game.roundInProgress === false) {
+        if((game.roundNum + 1) % 2 == 0) {
+          console.log("We are here");
+          givePlayerPowerUps(game);
+        }
         game.startNewRound();
       }
     }
@@ -157,10 +161,13 @@ io.on("connection", (socket) => {
     if (game.roundInProgress) {
       const player = game.findPlayer(socket.id);
       const powerUpName = player.powerUps[powerUpNum - 1];
+
       let powerUpObj;
       if (powerUpName != '') powerUpObj = PowerUp[powerUpName];
       // maybe add some warning here saying this powerup doesnt exist or something
-      if (powerUpName != '') socket.emit(listener, powerUpObj);
+      if (powerUpName != '') {
+        socket.emit(listener, powerUpObj);
+      }
     }
   })
 
@@ -286,13 +293,65 @@ io.on("connection", (socket) => {
     }
   });
 
-  //deal cards
-  socket.on('givePlayerPowerUp', (data) =>{
-      //generate powerup
-  //const pu = new PowerUp;
-  //for (const key in pu) console.log(pu[key].weight);
-    console.log("tet");
-  })
+  //deal powerup dylan
+  var givePlayerPowerUps = (game) => {
+    let powerup;
+    let powerupImg;
+    for (pn = 0; pn < game.players.length; pn++) {
+      console.log(game.players[pn].username);
+      if(game.players[pn].powerUps[0] == "") {
+        //distribute code
+        let powerupArr = distributePowerup()
+        game.players[pn].powerUps[0] = powerupArr[0];
+        powerupImg = powerupArr[1];
+        powerup = 1;
+      } else if (game.players[pn].powerUps[1] == "") {
+        //distribution code
+        let powerupArr = distributePowerup()
+        game.players[pn].powerUps[1] = powerupArr[0];
+        powerupImg = powerupArr[1];
+        powerup = 2;
+      }
+
+      io.to(game.players[pn].socket.id).emit('renderPowerups',{
+        position:powerup,
+        src: powerupImg
+      });
+
+    }
+  }
+
+  var distributePowerup =() => {
+    let weightArr = [];
+    //gets total weight
+    let weightCount = 0;
+    for(const powerup in PowerUp) {
+          weightArr[weightCount] = PowerUp[powerup].weight + (weightArr[weightCount - 1] || 0);
+          weightCount++;
+    }
+    // for(let i = 0; i < Object.keys(PowerUp).length; i++) {
+    //   weight[i] = PowerUp[i].weight + (PowerUp[i-1] || 0);
+    // }
+    let random = Math.random() * weightArr[weightArr.length - 1];
+
+    let choice = 0;
+    for(choice; choice < weightArr.length; choice++) {
+      if (weightArr[choice] > random) {
+        break;
+      }
+    }
+
+    let payload = [PowerUp[Object.keys(PowerUp)[choice]].name,PowerUp[Object.keys(PowerUp)[choice]].src];
+    return payload;
+  }
+
+  // socket.on('givePlayerPowerUp', (data) =>{
+  //   const game = rooms.find(
+  //     (r) => r.findPlayer(socket.id).socket.id === socket.id
+  //   );
+  //   game.this
+  //   console.log("tet");
+  // })
 
 
 });

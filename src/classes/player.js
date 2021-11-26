@@ -2,7 +2,8 @@ const Player = function (playerName, socket, debug) {
   this.username = playerName;
   this.cards = [];
 
-  this.powerUps = ['forceDC', 'nozdormu'];
+  //this.powerUps = ['forceDC', 'nozdormu'];
+  this.powerUps=['',''];
 
   this.socket = socket;
   this.currentCard = null;

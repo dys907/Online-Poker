@@ -851,10 +851,6 @@ socket.on('selectTarget', function(data) {
   $("#targetModal").show();
 })
 
-//receiving powerup signal dylan
-socket.on('givePlayerPowerUp', (data)=> {
-  console.log("tet");
-});
 
 socket.on('nozdormu', function(data) {
   hasTimer = true;
@@ -868,6 +864,27 @@ socket.on('forceDC', function(data) {
   setTimeout(() => {
     location.reload();
   }, 5000);
+})
+//rerenders the powerups
+socket.on('renderPowerups',function(data) {
+  if(data.position == 1) {
+    $("#usePowerUp1").attr("src",data.src);
+    $("#usePowerUp1").show();
+  } 
+  if(data.position == 2) {
+    $("#usePowerUp2").attr("src",data.src);
+    $("#usePowerUp2").show();
+  }
+})
+//deletes used powerup
+socket.on('clearPowerUp',function(data) {
+  if(data.position == 1) {
+    $("#usePowerUp1").hide();
+  }
+  if(data.position == 2) {
+    $("#usePowerUp2").hide();
+  }
+
 })
 
 // starting point from client
