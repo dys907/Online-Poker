@@ -881,10 +881,10 @@ socket.on('renderPowerups',function(data) {
 })
 //deletes used powerup
 socket.on('clearPowerUp',function(data) {
-  if(data.position == 1) {
+  if(data == 1) {
     $("#usePowerUp1").hide();
   }
-  if(data.position == 2) {
+  if(data == 2) {
     $("#usePowerUp2").hide();
   }
 

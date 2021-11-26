@@ -250,6 +250,8 @@ h5 {
 }
 
 #targetModal {
+  padding: 30px;
+  text-align: center;
   position: absolute; 
   left: 0; 
   right: 0; 
@@ -261,6 +263,8 @@ h5 {
   display: none;
   background-color: white;
   border: black 1px solid;
+  border-radius: 25px;
+  opacity: 0.9;
 }
 
 #powerUpToolTip {
