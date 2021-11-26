@@ -304,7 +304,8 @@ io.on("connection", (socket) => {
     let powerup;
     let powerupImg;
     for (pn = 0; pn < game.players.length; pn++) {
-      console.log(game.players[pn].username);
+      //delete this if statement after
+      if(game.players[pn].username != "Mattias") {
       if(game.players[pn].powerUps[0] == "") {
         //distribute code
         let powerupArr = distributePowerup()
@@ -323,6 +324,7 @@ io.on("connection", (socket) => {
         position:powerup,
         src: powerupImg
       });
+    }
 
     }
   }
