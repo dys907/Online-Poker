@@ -781,7 +781,8 @@ socket.on('displayPossibleMoves', function (d) {
   if (hasTimer) setTimeout(() => fold(), 15000);
 });
 
-socket.on('usePowerUp', function (data) {
+socket.on('usePowerUp', function (d) {
+  let data = d.obj;
   // here data is the name of the powerup this player is trying to use
   // todo: store this somewhere else maybe
 
@@ -793,18 +794,20 @@ socket.on('usePowerUp', function (data) {
     socket.emit('showSelectTarget', powerup);
   } else {
     // have no target
-    socket.emit('powerUp', {powerup:powerup});
+    socket.emit('powerUp', {powerup:powerup, num: d.num});
   }
 })
 
-socket.on('submitPowerUp', function(data) {
+socket.on('submitPowerUp', function(d) {
+  let data = d.obj;
   let powerUpName = data.name;
   let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
   $("#targetModal").hide();
-  socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName});
+  socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName, num: d.num});
 })
 
-socket.on('displayToolTip', function(data) {
+socket.on('displayToolTip', function(d) {
+  let data = d.obj;
   let powerUpTooltip = data.description;
   $("#powerUpToolTip").html(powerUpTooltip);
   $("#powerUpToolTip").show();
@@ -890,16 +893,6 @@ socket.on('clearPowerUp',function(data) {
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {
-  // let hasTarget = ['showPlayerCard', 'swapWithPlayer'];
-  // // change this to server side check
-  // let powerup = $("#usePowerUp" + num).attr('powerup');
-  // // have target
-  // if (hasTarget.includes(powerup)) {
-  //   socket.emit('showSelectTarget', powerup);
-  // } else {
-  //   // have no target
-  //   socket.emit('powerUp', {powerup:powerup});
-  // }
   $("#confirmTarget").attr("powerUpNum", num);
   socket.emit('getPowerUp', {
     powerUpNum: num,

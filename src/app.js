@@ -166,7 +166,10 @@ io.on("connection", (socket) => {
       if (powerUpName != '') powerUpObj = PowerUp[powerUpName];
       // maybe add some warning here saying this powerup doesnt exist or something
       if (powerUpName != '') {
-        socket.emit(listener, powerUpObj);
+        socket.emit(listener, {
+          obj: powerUpObj,
+          num: powerUpNum
+        });
       }
     }
   })
@@ -178,6 +181,7 @@ io.on("connection", (socket) => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
+    let num = data.num;
     let powerup = data.powerup;
     let target = data.target;
     if (game.roundInProgress) {
@@ -256,6 +260,8 @@ io.on("connection", (socket) => {
         default:
           break;
       }
+      player.powerUps[num-1] = '';
+      socket.emit('clearPowerUp',num);
     }
   });
 
