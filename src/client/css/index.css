@@ -165,3 +165,8 @@ code {
   padding: 5px 0;
   border-radius: 6px;
 }
+
+#cameraBox {
+  display: none;
+}
+

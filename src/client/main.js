@@ -3,6 +3,9 @@ $(document).ready(function () {
   $('.modal-trigger').leanModal();
   $('.tooltipped').tooltip({ delay: 50 });
 });
+
+
+
 // WebRTC Specifics
 const localVideoComponent = document.getElementById('local-video')
 const remoteVideoComponent = document.getElementById('remote-video')
@@ -13,6 +16,7 @@ const mediaConstraints = {
 let sessionDescription
 let localUuid;
 let localStream;
+setLocalStream(mediaConstraints);
 var roomId;
 var serverConnection;
 var peerConnections = {};
@@ -24,7 +28,6 @@ const iceServers = {
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
   ],
 }
 
@@ -115,7 +118,7 @@ socket.on('joinRoomUpdate', function (data) {
   );
 });
 
-socket.on('joinRoom', function (data) {
+socket.on('joinRoom', async function (data) {
   if (data == undefined) {
     $('#joinModal').closeModal();
     Materialize.toast(
@@ -208,22 +211,23 @@ socket.on('gameBegin', function (data) {
     alert('Error - invalid game.');
   } else {
     $('#gameDiv').show();
+    $('#cameraBox').show();
   }
 });
 
-socket.on('startCall',  async (peerUuid) => {
-  // Possibly should be when the user joins the room, as 
-  // no networking is needed to establish this part.
-  console.log('Setting local stream');
-  await setLocalStream(mediaConstraints);
+// socket.on('startCall',  async (peerUuid) => {
+//   // Possibly should be when the user joins the room, as 
+//   // no networking is needed to establish this part.
+//   console.log('Setting local stream');
+//   await setLocalStream(mediaConstraints);
 
-  console.log('Socket event callback: startCall');
-  rtcPeerConnection = new RTCPeerConnection();
-  addLocalTracks(rtcPeerConnection);
-  rtcPeerConnection.ontrack = setRemoteStream;
-  rtcPeerConnection.onicecandidate = sendIceCandidate;
-  await createOffer(rtcPeerConnection);
-})
+//   console.log('Socket event callback: startCall');
+//   rtcPeerConnection = new RTCPeerConnection();
+//   addLocalTracks(rtcPeerConnection);
+//   rtcPeerConnection.ontrack = setRemoteStream;
+//   rtcPeerConnection.onicecandidate = sendIceCandidate;
+//   await createOffer(rtcPeerConnection);
+// })
 
 // -----------------------------------------------------
 // ------------------- Start of webRTC -----------------
@@ -234,8 +238,8 @@ async function createOffer() {
   try {
     
     setUpPeer(socket.id, localName, true);
-    sessionDescription = await peerConnections[socketId].pc.createOffer();
-    peerConnections[socket.id].setLocalDescription(sessionDescription);
+    sessionDescription = await peerConnections[socket.id].pc.createOffer();
+    peerConnections[socket.id].pc.setLocalDescription(sessionDescription);
 
     socket.emit('webrtc_offer',{
       type: "webrtc_offer",
@@ -252,12 +256,26 @@ function setUpPeer(socketId, displayName, initCall = false) {
   peerConnections[socketId].pc.onicecandidate = event => gotIceCandidate(event, socketId);
   peerConnections[socketId].pc.ontrack = event => setCameraPortrait(event, socketId);
   peerConnections[socketId].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, socketId);
-  localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, stream));
+  localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, localStream));
 }
 
 function setCameraPortrait(event, socketId) {
-  
+  console.log(`got remote stream, peer ${socketId}`);
+  let vidElement = document.createElement('video');
+  vidElement.setAttribute('autoplay', '');
+  vidElement.setAttribute('muted', 'false');
+  vidElement.srcObject = event.streams[0];
+
+  let vidContainer = document.createElement('div');
+  vidContainer.setAttribute('id', 'remoteVideo_' + socketId);
+  vidContainer.setAttribute('class', 'videoContainer');
+  vidContainer.appendChild(vidElement);
+  vidContainer.appendChild(makeLabel(peerConnections[peerUuid].displayName));
+
+  document.getElementById('cameraBox').appendChild(vidContainer);
+
 }
+
 function gotIceCandidate(event, targetSocketId) {
   if (event.candidate != null) {
     socket.emit('webrtc_ice_candidate', {
@@ -276,22 +294,22 @@ socket.on('webrtc_ice_candidate', (event) => {
 });
 
 socket.on('webrtc_offer', async (event) => {
-  console.log('Socket event callback: webrtc_offer')
+  console.log('Socket event callback: webrtc_offer');
   if (event.requesterSocketId != socket.id) {
     // Set up remote
     setUpPeer(event.requesterSocketId, event.requesterDisplayName);
     //Create answer
-    let sessionDescription = await peerConnections[socket.id].createAnswer();
-    peerConnections[event.requesterSocketId].setLocalDescription(sessionDescription);
+    let sessionDescription = await peerConnections[socket.id].pc.createAnswer();
+    peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
     
     socket.emit('webrtc_answer', {
       type: 'webrtc_answer',
       sdp: sessionDescription,
       answererId: socket.id,
       targetId: targetId
-    })
+    });
   }
-})
+});
 
 // Better to broadcast only to the desired person.
 // Could use player.emit to target emit only to 1 person.
@@ -308,12 +326,13 @@ async function setLocalStream(mediaConstraints) {
   let stream
   try {
     stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
+    console.log('Stream has been set');
   } catch (error) {
     console.error('Could not get user media', error)
   }
 
-  localStream = stream
-  localVideoComponent.srcObject = stream
+  localStream = stream;
+  // localVideoComponent.srcObject = stream;
 }
 
 function addLocalTracks(rtcPeerConnection) {
@@ -430,7 +449,7 @@ var beginHost = function () {
   }
 };
 
-var joinRoom = function () {
+var joinRoom = async function () {
   // yes, i know this is client-side.
   if (
     $('#joinName-field').val() == '' ||
@@ -464,14 +483,16 @@ var joinRoom = function () {
     } else {
       alert('Your browser does not support getUserMedia API');
     }
-    //Start everything webRTC
-    await createOffer();
+    
     socket.emit('join', {
       code: $('#code-field').val(),
       username: $('#joinName-field').val(),
     });
     $('#hostButton').addClass('disabled');
     $('#hostButton').off('click');
+
+    //Start everything webRTC
+    await createOffer();
   }
 };
 
@@ -538,7 +559,7 @@ var showToolTip = (btnNum) => {
   socket.emit('getPowerUp', {
     powerUpNum: btnNum,
     listener: "displayToolTip"
-  })
+  });
 }
 
 var hideToolTip = () => {
@@ -1004,32 +1025,32 @@ socket.on('usePowerUp', function (data) {
     // have no target
     socket.emit('powerUp', {powerup:powerup});
   }
-})
+});
 
 socket.on('submitPowerUp', function(data) {
   let powerUpName = data.name;
   let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
   $("#targetModal").hide();
   socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName});
-})
+});
 
 socket.on('displayToolTip', function(data) {
   let powerUpTooltip = data.description;
   $("#powerUpToolTip").html(powerUpTooltip);
   $("#powerUpToolTip").show();
-})
+});
 
 // client listener
 // get the card data and show it (modal? toast? image somewhere)
 socket.on('showCommunityCard', function (data) {
   console.log(data);
-})
+});
 
 // client listener
 // get the card and show it
 socket.on('showPlayerCard', function(data) {
   console.log(data);
-})
+});
 
 socket.on('swapWithPlayer', function(data) {
   $('#mycards').html(
@@ -1037,7 +1058,7 @@ socket.on('swapWithPlayer', function(data) {
       return renderCard(c);
     })
   );
-})
+});
 
 socket.on('selectTarget', function(data) {
   let names = data.playerNames;
@@ -1047,7 +1068,7 @@ socket.on('selectTarget', function(data) {
   });
   $('input[name=target]:eq(0)').prop("checked", true);
   $("#targetModal").show();
-})
+});
 
 // starting point from client
 // emit to server call revealCommunityCard
@@ -1112,3 +1133,8 @@ function renderSelf(data) {
   }
   $('#blindStatus').text(data.blind);
 }
+
+
+$(window).on('beforeunload', function(){
+  socket.close();
+});

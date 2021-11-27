@@ -241,22 +241,30 @@ io.on("connection", (socket) => {
     }
   });
   socket.on('webrtc_offer', (event) => {
-    const game = rooms.find(
-      (r) => r.findPlayer(socket.id).socket.id === socket.id
-    );
-    console.log(`Broadcasting webrtc_offer event to peers in room ${game.getCode()}`);
+    let game;
+    rooms.forEach(gameRoom => {
+      let playerObj = gameRoom.getPlayerBySocket(event.requesterSocketId);
+
+      gameRoom.players.forEach(player => {
+        if (player.username == playerObj.username) {
+          game = gameRoom;
+        }
+      });
+    });
+ 
+    console.log(`Broadcasting webrtc_offer event to peers in room`);
     game.emitPlayers('webrtc_offer', {
       type: "webrtc_offer",
       sdp: event.sdp,
       requesterSocketId: event.peerUuid,
-      requesterDisplayName: game.getPlayerBySocket(event.requesterSocketId)
+      requesterDisplayName: game.getPlayerBySocket(event.requesterSocketId).username
     });
   });
   socket.on('webrtc_answer', (event) => {
     const game = rooms.find(
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
-    console.log(`Broadcasting webrtc_answer event to peers in room ${game.getCode()}`);
+    console.log(`Broadcasting webrtc_answer event to peers in room`);
     game.emitPlayers('webrtc_answer', {
       type: "webrtc_answer",
       sdp: event.sdp,
@@ -270,7 +278,7 @@ io.on("connection", (socket) => {
     const game = rooms.find (
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     )
-    console.log(`Broadcasting webrtc_ice_candidate event to peers in room ${game.getCode()}`);
+    console.log(`Broadcasting webrtc_ice_candidate event to peers in room`);
     game.emitPlayers('webrtc_ice_candidate', event);
   });
 });
