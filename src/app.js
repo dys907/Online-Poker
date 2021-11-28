@@ -407,29 +407,31 @@ io.on("connection", (socket) => {
     let powerupImg;
     for (pn = 0; pn < game.players.length; pn++) {
       //delete this if statement after
-      if(game.players[pn].username != "Mattias") {
-      if(game.players[pn].powerUps[0] == "") {
-        //distribute code
-        let powerupArr = distributePowerup()
-        game.players[pn].powerUps[0] = powerupArr[0];
-        powerupImg = powerupArr[1];
-        powerup = 1;
-      } else if (game.players[pn].powerUps[1] == "") {
-        //distribution code
-        let powerupArr = distributePowerup()
-        game.players[pn].powerUps[1] = powerupArr[0];
-        powerupImg = powerupArr[1];
-        powerup = 2;
+      if (game.players[pn].username != "Mattias") {
+        if (game.players[pn].powerUps[0] == "") {
+          //distribute code
+          let powerupArr = distributePowerup();
+          game.players[pn].powerUps[0] = powerupArr[0];
+          powerupImg = powerupArr[1];
+          powerup = 1;
+          io.to(game.players[pn].socket.id).emit("renderPowerups", {
+            position: powerup,
+            src: powerupImg,
+          });
+        } else if (game.players[pn].powerUps[1] == "") {
+          //distribution code
+          let powerupArr = distributePowerup();
+          game.players[pn].powerUps[1] = powerupArr[0];
+          powerupImg = powerupArr[1];
+          powerup = 2;
+          io.to(game.players[pn].socket.id).emit("renderPowerups", {
+            position: powerup,
+            src: powerupImg,
+          });
+        }
       }
-
-      io.to(game.players[pn].socket.id).emit('renderPowerups',{
-        position:powerup,
-        src: powerupImg
-      });
     }
-
-    }
-  }
+  };
 
   var distributePowerup =() => {
     let weightArr = [];

@@ -552,6 +552,7 @@ var beginHost = async function () {
     );
     $('#joinButton').removeClass('disabled');
   } else {
+    $("#getCodeBtn").prop('disabled', true);
     localName = $('#hostName-field').val();
     await setLocalStream(mediaConstraints);
 
