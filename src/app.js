@@ -1,12 +1,22 @@
 // server-side socket.io backend event handling
 const express = require('express');
+const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const socketio = require('socket.io');
 const Game = require('./classes/game.js');
 const PowerUp = require('./classes/powerup.js');
 
 const app = express();
-const server = http.createServer(app);
+
+//THIS IS STOLEN GOODS, REMOVE BEFORE MERGE
+const config = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem'),
+};
+
+const server = https.createServer(config, app);
+// const server = http.createServer(app);
 const io = socketio(server);
 
 const PORT = process.env.PORT || 3000;
@@ -254,9 +264,9 @@ io.on("connection", (socket) => {
  
     console.log(`Broadcasting webrtc_offer event to peers in room`);
     game.emitPlayers('webrtc_offer', {
-      type: "webrtc_offer",
+      type: "offer",
       sdp: event.sdp,
-      requesterSocketId: event.peerUuid,
+      requesterSocketId: event.requesterSocketId,
       requesterDisplayName: game.getPlayerBySocket(event.requesterSocketId).username
     });
   });
@@ -266,7 +276,7 @@ io.on("connection", (socket) => {
     );
     console.log(`Broadcasting webrtc_answer event to peers in room`);
     game.emitPlayers('webrtc_answer', {
-      type: "webrtc_answer",
+      type: "answer",
       sdp: event.sdp,
       answererId: event.answererId,
       answererName: game.getPlayerBySocket(event.answererId),
@@ -279,9 +289,24 @@ io.on("connection", (socket) => {
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     )
     console.log(`Broadcasting webrtc_ice_candidate event to peers in room`);
-    game.emitPlayers('webrtc_ice_candidate', event);
+    console.log(event.ice);
+
+
+    game.emitPlayers('webrtc_ice_candidate', {
+      ice: event.ice,
+      fromSocketId: event.fromSocketId,
+      dest: event.dest,
+    });
   });
 });
 
 
 server.listen(PORT, () => console.log(`hosting on port ${PORT}`));
+
+// Separate server to redirect from http to https
+//HTTP IS ON 3001
+http.createServer(function (req, res) {
+  console.log(req.headers['host']+req.url);
+  res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+  res.end();
+}).listen(PORT + 1);

@@ -11,34 +11,44 @@ const localVideoComponent = document.getElementById('local-video')
 const remoteVideoComponent = document.getElementById('remote-video')
 const mediaConstraints = {
   audio: true,
-  video: { width: 1280, height: 720 },
+  video: {
+    width: {max: 320},
+    height: {max: 240},
+    frameRate: {max: 30},
+  },
 }
-let sessionDescription
+let localName;
 let localUuid;
 let localStream;
 setLocalStream(mediaConstraints);
+
 var roomId;
 var serverConnection;
 var peerConnections = {};
 
 // Free STUN servers
-const iceServers = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-  ],
-}
+// const iceServers = {
+//   iceServers: [
+//     { urls: 'stun:stun.l.google.com:19302' },
+//     { urls: 'stun:stun1.l.google.com:19302' },
+//   ],
+// }
 
-var socket = io();
+var iceServers = {
+  'iceServers': [
+    { 'urls': 'stun:stun.stunprotocol.org:3478' },
+    { 'urls': 'stun:stun.l.google.com:19302' },
+  ]
+};
+
+var socket = io.connect('https://localhost:3000');
 var gameInfo = null;
 
 socket.on('playerDisconnected', function (data) {
   Materialize.toast(data.player + ' disconnected.', 4000);
 });
 
-socket.on('hostRoom', function (data) {
+socket.on('hostRoom', async function (data) {
   if (data != undefined) {
     if (data.players.length >= 11) {
       $('#hostModalContent').html(
@@ -78,6 +88,12 @@ socket.on('hostRoom', function (data) {
           return '<span>' + p + '</span><br />';
         })
       );
+
+      // await createOffer();
+      setUpPeer(socket.id, localName, true);
+
+      // peerConnections[socket.id].pc.createOffer().then(description => createdDescription(description, socket.id)).catch(errorHandler);
+
     }
   } else {
     Materialize.toast(
@@ -238,16 +254,21 @@ async function createOffer() {
   try {
     
     setUpPeer(socket.id, localName, true);
-    sessionDescription = await peerConnections[socket.id].pc.createOffer();
-    peerConnections[socket.id].pc.setLocalDescription(sessionDescription);
+    await peerConnections[socket.id].pc.createOffer()
+    .then((offer) => {
+      console.log("Creating offer function called, making offer");
+      peerConnections[socket.id].pc.setLocalDescription(offer);
+      console.log('IN CREATE OFFER: '+ offer.type);
 
-    socket.emit('webrtc_offer',{
-      type: "webrtc_offer",
-      sdp: peerConnections[socket.id].description,
-      requesterSocketId: socket.id
+      console.log("client socket id in createOffer: "+socket.id);
+      socket.emit('webrtc_offer', {
+        type: 'offer',
+        sdp: offer,
+        requesterSocketId: socket.id
+      });
     });
   } catch (error) {
-    console.error(error);
+    console.error(`Error creating offer: ${error}`);
   }
 }
 
@@ -270,7 +291,7 @@ function setCameraPortrait(event, socketId) {
   vidContainer.setAttribute('id', 'remoteVideo_' + socketId);
   vidContainer.setAttribute('class', 'videoContainer');
   vidContainer.appendChild(vidElement);
-  vidContainer.appendChild(makeLabel(peerConnections[peerUuid].displayName));
+  // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
 
   document.getElementById('cameraBox').appendChild(vidContainer);
 
@@ -278,8 +299,10 @@ function setCameraPortrait(event, socketId) {
 
 function gotIceCandidate(event, targetSocketId) {
   if (event.candidate != null) {
+    console.log("EVENT.CANDIDATE FOR ICE CANDIDATE IS VALID");
+    console.log(event);
     socket.emit('webrtc_ice_candidate', {
-      ice: event.candidate,
+      ice: event.ice,
       fromSocketId: socket.id,
       dest: targetSocketId
     });
@@ -287,51 +310,90 @@ function gotIceCandidate(event, targetSocketId) {
 }
 
 // Handles untargeted calls
-socket.on('webrtc_ice_candidate', (event) => {
+socket.on('webrtc_ice_candidate', async (event) => {
   if (event.dest == socket.id) {
-    peerConnections[event.fromSocketId].pc.addIceCandidate(new RTCIceCandidate(event.ice)).catch(errorHandler);
+    try {
+      console.log("adding ice candidate");
+      console.log(event);
+      
+      // await peerConnections[event.fromSocketId].pc.addIceCandidate(new RTCIceCandidate(event.ice));
+      await peerConnections[event.fromSocketId].pc.addIceCandidate(event.ice);
+
+    } catch (e) {
+      console.log(`Error adding received ice candidate: ${e}`);
+    }
   }
 });
 
 socket.on('webrtc_offer', async (event) => {
   console.log('Socket event callback: webrtc_offer');
-  if (event.requesterSocketId != socket.id) {
+  console.log("event request socket id: "+event.requesterSocketId);
+  console.log("event socket id: "+socket.id);
+  console.log(event.requesterSocketId !== socket.id);
+
+  if (event.requesterSocketId !== socket.id) {
+    console.log(`requesters socket offer: ${event.requesterSocketId}`);
+    console.log(`socket offer: ${socket.id}`);
+    console.log(event.requesterSocketId !== socket.id);
+
     // Set up remote
     setUpPeer(event.requesterSocketId, event.requesterDisplayName);
     //Create answer
-    let sessionDescription = await peerConnections[socket.id].pc.createAnswer();
-    peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
     
-    socket.emit('webrtc_answer', {
-      type: 'webrtc_answer',
-      sdp: sessionDescription,
-      answererId: socket.id,
-      targetId: targetId
+    console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
+
+    peerConnections[event.requesterSocketId].pc.setRemoteDescription(event.sdp)
+      .then(() => {
+        console.log("1st then");
+        peerConnections[event.requesterSocketId].pc.createAnswer()
+      .then((sessionDescription) => {
+        console.log("2nd then");
+        peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
+  
+        console.log('STATE IN THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
+
+        //targetId isnt' being set, where is this from???
+        socket.emit('webrtc_answer', {
+          type: 'answer',
+          sdp: sessionDescription,
+          answererId: socket.id,
+          targetId: event.requesterSocketId,
+        });
+      })
+      .catch(e => {
+        console.log(`Error creating webrtc offer in listener: ${e}`);
+      });
+
     });
+    console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
+
+    
   }
 });
 
 // Better to broadcast only to the desired person.
 // Could use player.emit to target emit only to 1 person.
-socket.on('webrtc_answer', (event) => {
+socket.on('webrtc_answer', async (event) => {
   console.log('Socket event callback: webrtc_answer')
   if (event.targetId == socket.id) {
     setUpPeer(event.answererId, event.answererName);
   }
-  peerConnections[socketId].pc.setRemoteDescription(new RTCSessionDescription(event));
-
-})
+  // peerConnections[socketId].pc.setRemoteDescription(new RTCSessionDescription(event.sdp));
+  await peerConnections[socketId].pc.setRemoteDescription(event.sdp);
+});
 
 async function setLocalStream(mediaConstraints) {
-  let stream
+  let stream;
   try {
     stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
+      .then(stream => {
+        localStream = stream;
+      });
     console.log('Stream has been set');
   } catch (error) {
     console.error('Could not get user media', error)
   }
 
-  localStream = stream;
   // localVideoComponent.srcObject = stream;
 }
 
@@ -443,6 +505,7 @@ var beginHost = function () {
     );
     $('#joinButton').removeClass('disabled');
   } else {
+    localName = $('#hostName-field').val();
     socket.emit('host', { username: $('#hostName-field').val() });
     $('#joinButton').addClass('disabled');
     $('#joinButton').off('click');
