@@ -306,16 +306,21 @@ io.on("connection", (socket) => {
 //we're passing in the socket ID directly into data from client
   socket.on('prep_call', (data) => {
     let game;
-    rooms.forEach(gameRoom => {
-      let playerObj = gameRoom.getPlayerBySocket(data.socketId);
-
-      gameRoom.players.forEach(player => {
-        if (player.username == playerObj.username) {
-          game = gameRoom;
-        }
+    try {
+      rooms.forEach(gameRoom => {
+        let playerObj = gameRoom.getPlayerBySocket(data.socketId);
+  
+        gameRoom.players.forEach(player => {
+          if (player.username == playerObj.username) {
+            game = gameRoom;
+          }
+        });
       });
-    });
-    game.emitPlayers('prep_call', data);
+      game.emitPlayers('prep_call', data);
+    } catch (e) {
+      console.log("can't find game room: " + e);
+    }
+    
   });
 
   socket.on('start_call', (data) => {

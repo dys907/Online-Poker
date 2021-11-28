@@ -289,15 +289,6 @@ h5 {
   margin-right: 5px;
 }
 
-video {
-  width: 160;
-  height: 120;
-}
-
-
-
-
-}
 
 #powerUpLogContainer, #revealedCardsLogContainer {
   display: none;
