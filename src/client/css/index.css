@@ -277,6 +277,14 @@ h5 {
 
 }
 
+/* #cameraBox {
+  display: none;
+} */
+
+
+
+}
+
 #powerUpLogContainer, #revealedCardsLogContainer {
   display: none;
   position: absolute;
@@ -369,3 +377,6 @@ h5 {
 #closeFAQ {
   cursor: pointer;
 }
+ 
+
+

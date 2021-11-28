@@ -1,12 +1,22 @@
 // server-side socket.io backend event handling
 const express = require('express');
+const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const socketio = require('socket.io');
 const Game = require('./classes/game.js');
 const PowerUp = require('./classes/powerup.js');
 
 const app = express();
-const server = http.createServer(app);
+
+//THIS IS STOLEN GOODS, REMOVE BEFORE MERGE
+const config = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem'),
+};
+
+const server = https.createServer(config, app);
+// const server = http.createServer(app);
 const io = socketio(server);
 
 const PORT = process.env.PORT || 3000;
@@ -291,6 +301,92 @@ io.on("connection", (socket) => {
     }
   });
 
+// ***************** WEBRTC *****************
+//we're passing in the socket ID directly into data from client
+  socket.on('prep_call', (data) => {
+    let game;
+    rooms.forEach(gameRoom => {
+      let playerObj = gameRoom.getPlayerBySocket(data.socketId);
+
+      gameRoom.players.forEach(player => {
+        if (player.username == playerObj.username) {
+          game = gameRoom;
+        }
+      });
+    });
+    game.emitPlayers('prep_call', data);
+  });
+
+  socket.on('start_call', (data) => {
+    let game;
+    rooms.forEach(gameRoom => {
+      let playerObj = gameRoom.getPlayerBySocket(data.socketId);
+
+      gameRoom.players.forEach(player => {
+        if (player.username == playerObj.username) {
+          game = gameRoom;
+        }
+      });
+    });
+    game.emitPlayers('prep_call', data);
+  })
+
+  socket.on('webrtc_offer', (event) => {
+    let game;
+    rooms.forEach(gameRoom => {
+      let playerObj = gameRoom.getPlayerBySocket(event.requesterSocketId);
+
+      gameRoom.players.forEach(player => {
+        if (player.username == playerObj.username) {
+          game = gameRoom;
+        }
+      });
+    });
+ 
+    console.log(`Broadcasting webrtc_offer event to peers in room`);
+    game.emitPlayers('webrtc_offer', {
+      type: 'offer',
+      sdp: event.sdp,
+      requesterSocketId: event.requesterSocketId,
+      requesterDisplayName: game.getPlayerBySocket(event.requesterSocketId).username,
+      target: event.target,
+    });
+  });
+  socket.on('webrtc_answer', (event) => {
+    const game = rooms.find(
+      (r) => r.findPlayer(socket.id).socket.id === socket.id
+    );
+    console.log(`Broadcasting webrtc_answer event to peers in room`);
+    // console.log(game);
+    let answererName = game.getPlayerBySocket(event.answererId).username;
+    console.log(answererName);
+
+    // answererName: game.getPlayerBySocket(event.answererId),
+    game.emitPlayers('webrtc_answer', {
+      type: "answer",
+      sdp: event.sdp,
+      answererId: event.answererId,
+      answererName: answererName,
+      targetId: event.targetId,
+    });
+    console.log("did this emit break it?");
+  });
+  // Not targeted but should be.
+  socket.on('webrtc_ice_candidate', (event) => {
+    const game = rooms.find (
+      (r) => r.findPlayer(socket.id).socket.id === socket.id
+    )
+    console.log(`Broadcasting webrtc_ice_candidate event to peers in room`);
+    console.log(event.ice);
+
+
+    game.emitPlayers('webrtc_ice_candidate', {
+      ice: event.ice,
+      fromSocketId: event.fromSocketId,
+      dest: event.dest,
+    });
+  });
+
   //deal powerup dylan
   var givePlayerPowerUps = (game) => {
     let powerup;
@@ -358,3 +454,11 @@ io.on("connection", (socket) => {
 
 
 server.listen(PORT, () => console.log(`hosting on port ${PORT}`));
+
+// Separate server to redirect from http to https
+//HTTP IS ON 3001
+http.createServer(function (req, res) {
+  console.log(req.headers['host']+req.url);
+  res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+  res.end();
+}).listen(PORT + 1);

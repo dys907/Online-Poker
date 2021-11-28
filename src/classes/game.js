@@ -686,6 +686,11 @@ const Game = function (name, host) {
     });
   };
 
+  this.getPlayerBySocket = (socketId) => {
+    let player =  this.players.find(player => player.socket.id == socketId);
+    return player;
+  }
+
   this.getCode = () => {
     return this.gameName;
   };
