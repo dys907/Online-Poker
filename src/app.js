@@ -198,7 +198,7 @@ io.on("connection", (socket) => {
       let fulltime = time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds();
       let powerUpName = PowerUp[powerup].logName;
       // broadcast to everyone
-      io.emit("updatePowerUpLog", {
+      game.emitPlayers("updatePowerUpLog", {
         user: player.username,
         target: target? otherplayer.username : null,
         powerUpName: powerUpName,
