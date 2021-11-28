@@ -180,17 +180,20 @@ socket.on('dealt', function (data) {
 
 socket.on('rerender', function (data) {
   if (data.myBet == 0) {
-    $('#usernamesCards').text(data.username + ' - My Cards');
+    $("#usernamesCards").text(data.username + " - My Cards");
   } else {
-    $('#usernamesCards').text(data.username + ' - My Bet: $' + data.myBet);
+    $("#usernamesCards").text(data.username + " - My Bet: $" + data.myBet);
   }
-  if (data.community != undefined)
-    $('#communityCards').html(
+  if (data.community != undefined) {
+    $("#revealedCardsLogText").empty();
+    $("#communityCards").html(
       data.community.map(function (c) {
         return renderCard(c);
       })
     );
-  else $('#communityCards').html('<p></p>');
+  } else {
+    $("#communityCards").html("<p></p>");
+  }
   if (data.currBet == undefined) data.currBet = 0;
   $('#table-title').text(
     'Game ' +
@@ -239,6 +242,9 @@ socket.on('gameBegin', function (data) {
   } else {
     $('#gameDiv').show();
     $('#cameraBox').show();
+    $("#powerUpLogContainer").show();
+    $("#revealedCardsLogContainer").show();
+    $("#faqBtn").show();
   }
 });
 
@@ -304,6 +310,7 @@ socket.on('start_call', (data) => {
     console.log("target: "+data.target);
     console.log("me: "+ data.socketId);
     createOffer(data.socketId);
+
   }
 });
 
@@ -553,7 +560,7 @@ socket.on('reveal', function (data) {
   }
   $('#table-title').text('Hand Winner(s): ' + data.winners);
   $('#playNext').html(
-    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">Start Next Game</button>'
+    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">NEXT GAME</button>'
   );
   $('#blindStatus').text(data.hand);
   $('#usernamesMoney').text('$' + data.money);
@@ -578,7 +585,7 @@ socket.on('endHand', function (data) {
   $('#usernameRaise').hide();
   $('#table-title').text(data.winner + ' takes the pot of $' + data.pot);
   $('#playNext').html(
-    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">Start Next Game</button>'
+    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">NEXT GAME</button>'
   );
   $('#blindStatus').text('');
   if (data.folded == 'Fold') {
@@ -721,15 +728,15 @@ var raise = function () {
 };
 
 var hideTarget = function() {
+  $("#confirmTarget").removeAttr('powerUpNum');
   $("#targetModal").hide();
 }
 
-var target = function(btn){
-  let btnId = btn.id;
-  let btnNum = 1;
-  if (btnId == 'usePowerUp2') btnNum = 2;
+var target = function(){
+  let powerUpNum = $("#confirmTarget").attr("powerUpNum");
+  $("#confirmTarget").removeAttr('powerUpNum');
   socket.emit('getPowerUp', {
-    powerUpNum: btnNum,
+    powerUpNum: powerUpNum,
     listener: "submitPowerUp"
   })
 }
@@ -792,13 +799,12 @@ function renderOpponent(name, data) {
   if (data.buyIns > 0) {
     if (data.text == 'Fold') {
       return (
-        '<div class="col s12 m2 opponentCard"><div class="card grey"><div class="card-content white-text"><span class="card-title">' +
+        '<div class="opponentCard"><div class="custom-card-opponent grey"><div class=" white-text"><span class="card-title">' +
         name +
-        ' (Fold)</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
+        ' (Fold)</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br />' +
         data.blind +
         '<br />' +
-        data.text +
-        '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+        '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
         data.money +
         ' (' +
         data.buyIns +
@@ -811,13 +817,10 @@ function renderOpponent(name, data) {
       if (data.text == 'Their Turn') {
         if (data.isChecked)
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card yellow darken-3"><div class="card-content black-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent yellow darken-3"><div class=" black-text"><span class="card-title">' +
             name +
-            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action yellow lighten-1 black-text center-align" style="font-size: 20px;">$' +
+            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action black-text center-align" style="font-size: 20px;">$' +
             data.money +
             ' (' +
             data.buyIns +
@@ -828,13 +831,10 @@ function renderOpponent(name, data) {
           );
         else if (bet == 0) {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card yellow darken-3"><div class="card-content black-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent yellow darken-3"><div class=" black-text"><span class="card-title">' +
             name +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action yellow lighten-1 black-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action black-text center-align" style="font-size: 20px;">$' +
             data.money +
             ' (' +
             data.buyIns +
@@ -845,15 +845,13 @@ function renderOpponent(name, data) {
           );
         } else {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card yellow darken-3"><div class="card-content black-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent yellow darken-3"><div class=" black-text"><span class="card-title">' +
             name +
             '<br />Bet: $' +
             bet +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br /><br />' +
-            data.text +
-            '</p></div><div class="card-action yellow lighten-1 black-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br />' +
+            '' +
+            '</p></div><div class="card-action black-text center-align" style="font-size: 20px;">$' +
             data.money +
             ' (' +
             data.buyIns +
@@ -866,13 +864,10 @@ function renderOpponent(name, data) {
       } else {
         if (data.isChecked)
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
             name +
-            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br />' +
+            '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
             data.money +
             ' (' +
             data.buyIns +
@@ -883,13 +878,10 @@ function renderOpponent(name, data) {
           );
         else if (bet == 0) {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
             name +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
             data.money +
             ' (' +
             data.buyIns +
@@ -900,15 +892,12 @@ function renderOpponent(name, data) {
           );
         } else {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
             name +
             '<br />Bet: $' +
             bet +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
             data.money +
             ' (' +
             data.buyIns +
@@ -925,13 +914,12 @@ function renderOpponent(name, data) {
   else {
     if (data.text == 'Fold') {
       return (
-        '<div class="col s12 m2 opponentCard"><div class="card grey"><div class="card-content white-text"><span class="card-title">' +
+        '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent grey"><div class=" white-text"><span class="card-title">' +
         name +
-        ' (Fold)</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
+        ' (Fold)</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
         data.blind +
         '<br />' +
-        data.text +
-        '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+        '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
         data.money +
         '</div></div></div>'
       );
@@ -939,39 +927,31 @@ function renderOpponent(name, data) {
       if (data.text == 'Their Turn') {
         if (data.isChecked)
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card yellow darken-3"><div class="card-content black-text"><span class="card-title black-text">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent yellow darken-3"><div class=" black-text"><span class="card-title black-text">' +
             name +
-            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action yellow lighten-1 black-text center-align" style="font-size: 20px;">$' +
+            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br />' +
+            '</p></div><div class="card-action black-text center-align" style="font-size: 20px;">$' +
             data.money +
             '</div></div></div>'
           );
         else if (bet == 0) {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card yellow darken-3"><div class="card-content black-text"><span class="card-title black-text">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent yellow darken-3"><div class=" black-text"><span class="card-title black-text">' +
             name +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action yellow lighten-1 black-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action black-text center-align" style="font-size: 20px;">$' +
             data.money +
             '</div></div></div>'
           );
         } else {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card yellow darken-3"><div class="card-content black-text"><span class="card-title black-text">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent yellow darken-3"><div class=" black-text"><span class="card-title black-text">' +
             name +
             '<br />Bet: $' +
             bet +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br /><br />' +
-            data.text +
-            '</p></div><div class="card-action yellow lighten-1 black-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br />' +
+            '' +
+            '</p></div><div class="card-action black-text center-align" style="font-size: 20px;">$' +
             data.money +
             '</div></div></div>'
           );
@@ -979,39 +959,30 @@ function renderOpponent(name, data) {
       } else {
         if (data.isChecked)
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
             name +
-            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+            '<br />Check</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
             data.money +
             '</div></div></div>'
           );
         else if (bet == 0) {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
             name +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
             data.money +
             '</div></div></div>'
           );
         } else {
           return (
-            '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+            '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
             name +
             '<br />Bet: $' +
             bet +
-            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br />' +
-            data.blind +
-            '<br />' +
-            data.text +
-            '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+            '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br />' +
+            '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
             data.money +
             '</div></div></div>'
           );
@@ -1034,11 +1005,11 @@ function renderOpponentCards(name, data) {
   if (data.buyIns > 0) {
     if (data.folded)
       return (
-        '<div class="col s12 m2 opponentCard"><div class="card grey" ><div class="card-content white-text"><span class="card-title">' +
+        '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent grey" ><div class=" white-text"><span class="card-title">' +
         name +
         ' | Bet: $' +
         bet +
-        '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br /><br /></p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+        '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /></p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
         data.money +
         ' (' +
         data.buyIns +
@@ -1049,7 +1020,7 @@ function renderOpponentCards(name, data) {
       );
     else
       return (
-        '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+        '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
         name +
         ' | Bet: $' +
         bet +
@@ -1058,7 +1029,7 @@ function renderOpponentCards(name, data) {
         renderOpponentCard(data.cards[1]) +
         ' </div><br /><br /><br /><br /><br />' +
         data.endHand +
-        '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+        '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
         data.money +
         ' (' +
         data.buyIns +
@@ -1070,17 +1041,17 @@ function renderOpponentCards(name, data) {
   } else {
     if (data.folded)
       return (
-        '<div class="col s12 m2 opponentCard"><div class="card grey" ><div class="card-content white-text"><span class="card-title">' +
+        '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent grey" ><div class=" white-text"><span class="card-title">' +
         name +
         ' | Bet: $' +
         bet +
-        '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /><br /><br /><br /><br /></p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+        '</span><p><div class="center-align"><div class="blankCard" id="opponent-card" /><div class="blankCard" id="opponent-card" /></div><br /><br /></p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
         data.money +
         '</div></div></div>'
       );
     else
       return (
-        '<div class="col s12 m2 opponentCard"><div class="card green darken-2" ><div class="card-content white-text"><span class="card-title">' +
+        '<div class="col s12 m2 opponentCard"><div class="custom-card-opponent green darken-2" ><div class=" white-text"><span class="card-title">' +
         name +
         ' | Bet: $' +
         bet +
@@ -1089,7 +1060,7 @@ function renderOpponentCards(name, data) {
         renderOpponentCard(data.cards[1]) +
         ' </div><br /><br /><br /><br /><br />' +
         data.endHand +
-        '</p></div><div class="card-action green darken-3 white-text center-align" style="font-size: 20px;">$' +
+        '</p></div><div class="card-action white-text center-align" style="font-size: 20px;">$' +
         data.money +
         '</div></div></div>'
       );
@@ -1174,7 +1145,8 @@ function updateRaiseModal() {
   socket.emit('raiseModalData', {});
 }
 
-socket.on('displayPossibleMoves', function (data) {
+socket.on('displayPossibleMoves', function (d) {
+  let data = d.moves;
   if (data.fold == 'yes') $('#usernameFold').show();
   else $('#usernameHide').hide();
   if (data.check == 'yes') $('#usernameCheck').show();
@@ -1188,9 +1160,25 @@ socket.on('displayPossibleMoves', function (data) {
   } else $('#usernameCall').hide();
   if (data.raise == 'yes') $('#usernameRaise').show();
   else $('#usernameRaise').hide();
+  let hasTimer = d.hasTimer;
+  if (hasTimer) {
+    $("#timer").show();
+    let startTime = 15;
+    $("#timer").html(startTime);
+    let countdown = setInterval(() => {
+      startTime--;
+      $("#timer").html(startTime);
+    }, 1000);
+    setTimeout(() => {
+      clearInterval(countdown);
+      $("#timer").hide();
+      fold();
+    }, 15000);
+  }
 });
 
-socket.on('usePowerUp', function (data) {
+socket.on('usePowerUp', function (d) {
+  let data = d.obj;
   // here data is the name of the powerup this player is trying to use
   // todo: store this somewhere else maybe
 
@@ -1202,33 +1190,72 @@ socket.on('usePowerUp', function (data) {
     socket.emit('showSelectTarget', powerup);
   } else {
     // have no target
-    socket.emit('powerUp', {powerup:powerup});
+    socket.emit('powerUp', {powerup:powerup, num: d.num});
   }
 });
 
-socket.on('submitPowerUp', function(data) {
+socket.on('submitPowerUp', function(d) {
+  let data = d.obj;
   let powerUpName = data.name;
   let selectedPlayerName = $('input[name=target]:checked', '#target-radio').val();
   $("#targetModal").hide();
-  socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName});
-});
+  socket.emit('powerUp', {powerup: powerUpName, target: selectedPlayerName, num: d.num});
+})
 
-socket.on('displayToolTip', function(data) {
+socket.on('displayToolTip', function(d) {
+  let data = d.obj;
   let powerUpTooltip = data.description;
   $("#powerUpToolTip").html(powerUpTooltip);
   $("#powerUpToolTip").show();
 });
 
+socket.on('updatePowerUpLog', function(data) {
+  let user = data.user;
+  let target = data.target;
+  let powerUpName = data.powerUpName;
+  let time = data.time;
+  let fullMsg = time + ' - ' + user + ' used power up "' + powerUpName + '"'
+  if (target) fullMsg += ' on ' + target;
+  $("#powerUpLogText").append("<br/>" + fullMsg);
+  $("#powerUpLog").scrollTop($("#powerUpLog")[0].scrollHeight);
+  $("#powerUpAnnounce").html("Latest: " + fullMsg);
+  $("#powerUpAnnounce").show();
+  setTimeout(() => {
+    $("#powerUpAnnounce").empty();
+    $("#powerUpAnnounce").hide();
+  }, 3000);
+
+})
+
 // client listener
 // get the card data and show it (modal? toast? image somewhere)
 socket.on('showCommunityCard', function (data) {
-  console.log(data);
-});
+  let fullMsg = "Community Card(s): <br/>";
+  data.map((d) => {
+    fullMsg += d.value;
+    fullMsg += " of ";
+    fullMsg += d.suit;
+    fullMsg += "<br/>";
+  })
+  $("#revealedCardsLogText").append(fullMsg);
+  $("#revealedCardsLog").scrollTop($("#revealedCardsLog")[0].scrollHeight);
+  //console.log(data);
+})
 
 // client listener
 // get the card and show it
-socket.on('showPlayerCard', function(data) {
-  console.log(data);
+socket.on("showPlayerCard", function (data) {
+  let d = data.card;
+  let n = data.name;
+  let fullMsg = "One of " + n + "'s Card: ";
+
+  fullMsg += d.value;
+  fullMsg += " of ";
+  fullMsg += d.suit;
+  fullMsg += "<br/>";
+
+  $("#revealedCardsLogText").append(fullMsg);
+  $("#revealedCardsLog").scrollTop($("#revealedCardsLog")[0].scrollHeight);
 });
 
 socket.on('swapWithPlayer', function(data) {
@@ -1249,23 +1276,63 @@ socket.on('selectTarget', function(data) {
   $("#targetModal").show();
 });
 
+
+socket.on('nozdormu', function(data) {
+  hasTimer = true;
+})
+
+socket.on('forceDC', function(data) {
+  Materialize.toast(data + " has disconnected you", 4000);
+  $("#gameDiv").remove();
+  $("#powerUpLogContainer").remove();
+  $("#revealedCardsLogContainer").remove();
+  $("#powerUpAnnounce").remove();
+  $("#faq").remove();
+  $("#faqBtn").remove();
+  $("#timer").remove();
+  $(".page-footer").remove();
+  setTimeout(() => {
+    location.reload();
+  }, 5000);
+})
+//rerenders the powerups
+socket.on('renderPowerups',function(data) {
+  if(data.position == 1) {
+    $("#usePowerUp1").attr("src",data.src);
+    $("#usePowerUp1").show();
+  } 
+  if(data.position == 2) {
+    $("#usePowerUp2").attr("src",data.src);
+    $("#usePowerUp2").show();
+  }
+})
+//deletes used powerup
+socket.on('clearPowerUp',function(data) {
+  if(data == 1) {
+    $("#usePowerUp1").hide();
+  }
+  if(data == 2) {
+    $("#usePowerUp2").hide();
+  }
+
+})
+
 // starting point from client
 // emit to server call revealCommunityCard
 function usePowerUp(num) {
-  // let hasTarget = ['showPlayerCard', 'swapWithPlayer'];
-  // // change this to server side check
-  // let powerup = $("#usePowerUp" + num).attr('powerup');
-  // // have target
-  // if (hasTarget.includes(powerup)) {
-  //   socket.emit('showSelectTarget', powerup);
-  // } else {
-  //   // have no target
-  //   socket.emit('powerUp', {powerup:powerup});
-  // }
+  $("#confirmTarget").attr("powerUpNum", num);
   socket.emit('getPowerUp', {
     powerUpNum: num,
     listener: 'usePowerUp',
   });
+}
+
+function showFAQ() {
+  $("#faq").show();
+}
+
+function closeFAQ() {
+  $("#faq").hide();
 }
 
 function renderSelf(data) {

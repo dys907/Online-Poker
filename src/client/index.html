@@ -28,69 +28,47 @@
 	</div>
 
 	<div id="gameDiv">
-		<h4 class="white-text">Texas Hold 'Em Game</h4>
-		<div class="row">
-			<div id="self-video-container" class="video-position" style="display: none">
-				<video id=”local-video” autoplay=”autoplay”></video>
+		<h5 class="white-text" id="table-title" class="card-title"></h5>
+		<div class="container">
+			<div id="opponentCards"></div>
+			<div id="poker-table" style="background-image: url('img/poker_table.png');">
+				<div id="communityCards"></div>
 			</div>
-			<div class="col s12 m3">
-				<div id="playerInformationCard" class="card green darken-2">
+			<div id="button_info_container">
+				<div id="playerInformationCard" class="custom-card green darken-2">
 					<div class="card-content white-text">
-						<span class="card-title" id="usernamesCards"></span>
+						<span class="card-title" id="usernamesCards" style="font-size: 12px; line-height: 0;"></span>
 						<div id="mycards"></div>
 					</div>
 				</div>
-			</div>
-			<div class="col s12 m2">
-				<div class="card green darken-2">
-					<div class="card-content white-text center-align">
+				<fieldset id="buttons" style="background-color: rgba(211, 211, 211, 0.5);">
+					<legend style="color: white;">&nbsp;Buttons&nbsp;</legend>
+					<div class="buttons-container">
 						<span class="card-title center-align" id="usernamesMoney"></span>
 						<div id="blindStatus"></div>
 						<div id="status"></div>
-						<br />
 						<div id="playNext"></div>
 						<button onClick=fold() id="usernameFold" class="btn white black-text menuButtons">Fold</button>
-						<br />
 						<button onClick=check() id="usernameCheck" class="btn white black-text menuButtons">Check</button>
-						<br />
 						<button href="#betModal" onClick=updateBetModal() id="usernameBet"
 							class="btn white black-text modal-trigger menuButtons">Bet</button>
-						<br />
 						<button onClick=call() id="usernameCall" class="btn white black-text menuButtons">Call</button>
-						<br />
 						<button href="#raiseModal" onClick=updateRaiseModal() id="usernameRaise"
 							class="btn white black-text modal-trigger menuButtons">Raise</button>
-						<br />
-						<!--dynamically generate these buttons? once a powerup is given to this player-->
-						<div id='powerUpContainer'>
-							<button onClick=usePowerUp(1) onmouseover=showToolTip(1) onmouseout=hideToolTip() id="usePowerUp1"
-								class="btn white black-text">Reveal</button>
+							<br/><span id="powerUpToolTip"></span>	
+					</div>
+					<fieldset class="power-up-container">
+						<legend style="color: white;">&nbsp;Power Ups&nbsp;</legend>
+								<input type ="image" src="" onClick=usePowerUp(1) onmouseover=showToolTip(1) onmouseout=hideToolTip() id="usePowerUp1">
 							<br />
 						
-							<button onClick=usePowerUp(2) onmouseover=showToolTip(2) onmouseout=hideToolTip() id="usePowerUp2"
-								class="btn white black-text">Reveal</button>
+							<input type ="image" src="" onClick=usePowerUp(2) onmouseover=showToolTip(2) onmouseout=hideToolTip() id="usePowerUp2">
 							<br />
-							<span id="powerUpToolTip"></span>
-						</div>
-
-
-
-					</div>
-				</div>
+							
+          </fieldset>
+				</fieldset>
 			</div>
-			<div class="col s12 m7">
-				<div class="card green darken-2">
-					<div class="card-content white-text">
-						<span id="table-title" class="card-title"></span>
 
-						<div id="communityCards"></div>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="row">
-			<div id="opponentCards"></div>
 		</div>
 		<video id=”remote-video” autoplay=”autoplay”></video>
 	</div>
@@ -206,7 +184,6 @@
 	</div>
 	<div id="targetModal">
 		<div>
-			<h4>Target</h4>
 			<form action="#">
 				<div id="targetDisplay">
 					<h4>Select a player to target with this powerup</h4>
@@ -216,7 +193,7 @@
 				</div>
 			</form>
 			<br />
-			<button id="confirmTarget" onclick=target(this) type="submit"
+			<button id="confirmTarget" onclick=target() type="submit"
 				class="waves-effect waves-light indigo darken-3 white-text btn-flat">Confirm
 				Target</button>
 		</div>
@@ -224,8 +201,50 @@
 			<button id="close-target-modal" onclick=hideTarget() class="waves-effect waves-light btn-flat">CLOSE</a>
 		</div>
 	</div>
+	<div id="revealedCardsLogContainer">
+		<b>Cheat Sheet</b><br/>
+		<div id="revealedCardsLog">
+			<p id="revealedCardsLogText">
+			</p>
+		</div>
+	</div>
+	<div id="powerUpLogContainer">
+		<b>Power Up Log</b><br/>
+		<div id="powerUpLog">
+			<p id="powerUpLogText">
+			</p>
+		</div>
+	</div>
+	<b id="powerUpAnnounce"></b>
+	<h1 id="timer"></h1>
+	<h1 id="faqBtn" onclick=showFAQ()>?</h1>
+	<div id="faq">
+		<p>Welcome to our version of Online Poker. In addition to a normal poker game, you'll also get a "Power Up" sometimes to help you gain an advantage over your opponents.</p>
+
+		<p>You'll randomly gain one power up every other round, and you can hold at most two power ups. You'll not lose them when a new round starts.</p>
+		
+		<p>Power ups you gain will be in the Power Ups section at the bottom. Hover over them to see a tooltip.</p>
+		
+		<p>Below is the list of power ups available and what they do.</p>
+		
+		<p>Peek at community card: This powerup allows you to see cards in the river</p>
+		
+		<p>Peek at another player's card: This powerup allows you to choose a player and see a card they have</p>
+		
+		<p>Swap cards with another player: This powerup allows you to choose a player and swap cards with them</p>
+		
+		<p>Swap chip stack with another player: Swaps your chip stack with another targetted player</p>
+		
+		<p>Redeal a new hand: Deals a new hand for yourself</p>
+		
+		<p>Nozdormu - Limit a player's turn to 15 seconds: Force a player to make a move within 15 seconds, or this player will automatically fold. Hearthstone reference</p>
+		
+		<p>Force a player to disconnect: Disconnect a player from this game</p>
+		<h3 id="closeFAQ" onclick=closeFAQ()>Close</h3>
+	</div>
+
 	<footer class="page-footer white">
-		<div class="container footer-c">
+		<div class="container footer-c footer-move">
 			<b>© 2020 - Peter Wu. <a href="https://github.com/ptwu/distributed-texasholdem">GitHub Repository</a></b><br><br>
 	</footer>
 
