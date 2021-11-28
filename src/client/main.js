@@ -53,7 +53,7 @@ var iceServers = {
   
 };
 
-var socket = io.connect('https://localhost:3000');
+var socket = io.connect();
 var gameInfo = null;
 
 socket.on('playerDisconnected', function (data) {

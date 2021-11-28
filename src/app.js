@@ -10,12 +10,13 @@ const PowerUp = require('./classes/powerup.js');
 const app = express();
 
 //THIS IS STOLEN GOODS, REMOVE BEFORE MERGE
-const config = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem'),
-};
+// const config = {
+//   key: fs.readFileSync('key.pem'),
+//   cert: fs.readFileSync('cert.pem'),
+// };
 
-const server = https.createServer(config, app);
+// const server = https.createServer(config, app);
+const server = https.createServer(app);
 // const server = http.createServer(app);
 const io = socketio(server);
 
