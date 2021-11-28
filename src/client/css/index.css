@@ -362,4 +362,10 @@ h5 {
   top: 0;
   right: 0;
   margin: 10px;
+  cursor: pointer;
+  color: white;
+}
+
+#closeFAQ {
+  cursor: pointer;
 }
