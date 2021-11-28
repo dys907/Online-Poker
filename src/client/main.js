@@ -348,8 +348,14 @@ function setUpPeer(socketId, displayName, initCall = false) {
   peerConnections[socketId].pc.addStream(localStream);
 
 }
+
 function checkPeerDisconnect(event, socketId) {
-  console.log("Disconnect called");
+  var state = peerConnections[socketId].pc.iceConnectionState;
+  console.log(`connection disconnect with peer ${socketId}`);
+  if (state === "failed" || state === "closed" || state === "disconnected") {
+    delete peerConnections[socketId];
+    document.getElementById('videos').removeChild(document.getElementById('remoteVideo_' + socketId));
+  }
 }
 
 function setCameraPortrait(event, socketId) {
