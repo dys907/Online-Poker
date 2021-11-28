@@ -259,13 +259,13 @@ h5 {
   top: 0;
   bottom: 0;
   width: 50vw;
-  height: 30vh;
+  height: 300px;
   margin: auto;
   display: none;
   background-color: white;
   border: black 1px solid;
   border-radius: 25px;
-  opacity: 0.9;
+  opacity: 0.95;
   z-index: 15;
 }
 
@@ -344,7 +344,7 @@ h5 {
   display: none;
   position: absolute;
   right: 0;
-  top: 70vh;
+  top: 370px;
   z-index: 10;
 }
 
@@ -369,7 +369,7 @@ h5 {
   display: none;
   position: absolute;
   right: 0;
-  top: 75vh;
+  top: 520px;
   margin-right: 20px;
 }
 
