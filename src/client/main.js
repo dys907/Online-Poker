@@ -18,10 +18,19 @@ const mediaConstraints = {
     frameRate: {max: 30},
   },
 }
+
+const myMedia = {
+  audio: true,
+  video: {
+    width: {max: 320},
+    height: {max: 240},
+    frameRate: {max: 30},
+  },
+}
 let localName;
 let localUuid;
 let localStream;
-setLocalStream(mediaConstraints);
+setLocalStream(myMedia);
 let host = false;
 
 var roomId;
@@ -251,23 +260,72 @@ socket.on('gameBegin', function (data) {
 // ------------------- Start of webRTC -----------------
 // -----------------------------------------------------
 
-socket.on('start_call', (socketId) => {
-  if (socketId === socket.id) return;
+/**
+ * 
+ * Caller sends socket ID to server
+ * Server relays that to everyone else
+ * Everyone else creates a local desc of their socket in peer connections
+ * Caller creates local description?
+ * And then creates answer?
+ * 
+ * Caller creates the offer
+ * Server relays that offer to everyone else
+ * Everyone else generates answer
+ * Sends back to caller
+ * 
+ * 
+ * 
+ */
 
-  createOffer(socketId)
+socket.on('prep_call', (data) => {
+  if (data.socketId === socket.id) return;
+
+  console.log("Who am i PREP CALL");
+    console.log("target: "+ data.socketId);
+    console.log("me: "+ socket.id);
+
+  //Set up peer?
+  setUpPeer(data.socketId, data.name, true);
+  // createOffer(socketId);
+  
+  socket.emit('start_call', {
+    socketId: socket.id,
+    name: localName,
+    target: data.socketId,
+  });
+
+});
+
+socket.on('start_call', (data) => {
+  if (data.target === socket.id) {
+    setUpPeer(data.socketId, localName, true);
+
+    console.log("Who am i START CALL:");
+    console.log("target: "+data.target);
+    console.log("me: "+ data.socketId);
+    createOffer(data.socketId);
+  }
 });
 
 //Creates the WebRTC handshake offer.
 //Is called when client clicks JOIN ROOM
 async function createOffer(targetSocket) {
   try {
-    setUpPeer(targetSocket, localName, true);
-    await peerConnections[targetSocket].pc.createOffer()
-    .then((offer) => {
-      console.log("Creating offer function called, making offer");
-      peerConnections[targetSocket].pc.setLocalDescription(offer);
+   
 
-      console.log('IN CREATE OFFER: '+ offer.type);
+    await peerConnections[targetSocket].pc.createOffer()
+    .then(async (offer) => {
+      
+      console.log("Creating offer function called, making offer");
+      console.log(peerConnections[targetSocket].pc);
+      console.log(peerConnections[targetSocket].pc.signalingState);
+
+      // console.log(offer);
+      console.log(`TARGET SOCKET IN CREATEOFFER: ${targetSocket}`);
+      await peerConnections[targetSocket].pc.setLocalDescription(offer);
+
+      console.log(peerConnections[targetSocket].pc.signalingState);
+
       // console.log("client socket id in createOffer: "+socket.id);
       socket.emit('webrtc_offer', {
         type: 'offer',
@@ -286,17 +344,25 @@ function setUpPeer(socketId, displayName, initCall = false) {
   peerConnections[socketId].pc.onicecandidate = event => gotIceCandidate(event, socketId);
   peerConnections[socketId].pc.ontrack = event => setCameraPortrait(event, socketId);
   peerConnections[socketId].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, socketId);
-  localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, localStream));
+  // localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, localStream));
+  peerConnections[socketId].pc.addStream(localStream);
+
 }
 function checkPeerDisconnect(event, socketId) {
   console.log("Disconnect called");
 }
 
 function setCameraPortrait(event, socketId) {
-  console.log(`got remote stream, peer ${socketId}`);
+  console.log(`SET CAMERA: got remote stream, peer ${socketId}`);
+  // console.log(event);
+
+  if (event.track.kind == "audio") return;
+
+  const cameraContainer = document.getElementById("cameraBox");
+
   let vidElement = document.createElement('video');
   vidElement.setAttribute('autoplay', '');
-  vidElement.setAttribute('muted', 'true');
+  vidElement.setAttribute('muted', 'false');
   vidElement.srcObject = event.streams[0];
 
   let vidContainer = document.createElement('div');
@@ -308,12 +374,15 @@ function setCameraPortrait(event, socketId) {
   document.getElementById('cameraBox').appendChild(vidContainer);
 }
 
+
 function gotIceCandidate(event, targetSocketId) {
-  if (targetSocketId !== socket.id) return;
+  // console.log("got ice candidate check1");
+  // if (targetSocketId !== socket.id) return;
+  // console.log("got ice candidate check2");
 
   if (event.candidate != null) {
     console.log("EVENT.CANDIDATE FOR ICE CANDIDATE IS VALID");
-    console.log(event);
+    // console.log(event);
 
     //event => { isTrusted : true}
     // event.candidate => { candidate stuff (?)}
@@ -328,15 +397,14 @@ function gotIceCandidate(event, targetSocketId) {
 let count = 0;
 // Handles untargeted calls
 socket.on('webrtc_ice_candidate', async (event) => {
+  console.log("is webrtc-ice_candidate called at all?");
   if (event.dest == socket.id) {
     try {
-      count++;
-      console.log(`called ice candidate times: ${count}`);
       console.log("adding ice candidate");
-      console.log(event);
       
       // await peerConnections[event.fromSocketId].pc.addIceCandidate(new RTCIceCandidate(event.ice));
       await peerConnections[event.fromSocketId].pc.addIceCandidate(event.ice);
+      console.log(peerConnections[event.fromSocketId].pc);
 
     } catch (e) {
       console.log(`Error adding received ice candidate: ${e}`);
@@ -346,30 +414,27 @@ socket.on('webrtc_ice_candidate', async (event) => {
 
 socket.on('webrtc_offer', async (event) => {
   if (event.target !== socket.id) return;
-
   console.log('Socket event callback: webrtc_offer');
-  // console.log("event request socket id: "+event.requesterSocketId);
-  // console.log("event socket id: "+socket.id);
-  // console.log(event.requesterSocketId !== socket.id);
-
   
-  // console.log(`requesters socket offer: ${event.requesterSocketId}`);
-  // console.log(`socket offer: ${socket.id}`);
-  // console.log(event.requesterSocketId !== socket.id);
-
   // Set up remote
   setUpPeer(event.requesterSocketId, event.requesterDisplayName);
-  //Create answer
-  
-  // console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
+  console.log('STATE before setRemote: ' + peerConnections[event.requesterSocketId].pc.signalingState);
 
-  peerConnections[event.requesterSocketId].pc.setRemoteDescription(event.sdp)
-    .then(() => {
+
+  //Create answer
+  // console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
+  await peerConnections[event.requesterSocketId].pc.setRemoteDescription(event.sdp)
+    .then(async () => {
       console.log("1st then");
-      peerConnections[event.requesterSocketId].pc.createAnswer()
-    .then((sessionDescription) => {
+      console.log('STATE IN 1st THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
+
+      await peerConnections[event.requesterSocketId].pc.createAnswer()
+    .then(async (sessionDescription) => {
       console.log("2nd then");
-      peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
+      console.log('STATE IN 2nd THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
+
+
+      await peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
 
       console.log('STATE IN THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
       //targetId isnt' being set, where is this from???
@@ -394,17 +459,27 @@ socket.on('webrtc_offer', async (event) => {
 // Better to broadcast only to the desired person.
 // Could use player.emit to target emit only to 1 person.
 socket.on('webrtc_answer', async (event) => {
-  console.log('Socket event callback: webrtc_answer')
-  
+  console.log('Socket event callback: webrtc_answer');
+  // console.log(peerConnections[event.answererId].pc);
+
   if (event.targetId == socket.id) {
-    setUpPeer(event.answererId, event.answererName);
+    console.log("test1");
+    // console.log(peerConnections[event.answererId].pc);
+    console.log(`AnswererID in WEBRTC_ANSWER: ${event.answererId}`);
+
+    // setUpPeer(event.answererId, event.answererName);
+    // console.log(peerConnections[event.answererId].pc.signalingState);
+    
+    console.log("test2");
     await peerConnections[event.answererId].pc.setRemoteDescription(event.sdp);
+    console.log("test3");
   }
   // peerConnections[socketId].pc.setRemoteDescription(new RTCSessionDescription(event.sdp));
 });
 
 async function setLocalStream(mediaConstraints) {
   let stream;
+  console.log('SET LOCAL STREAM');
   try {
     stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
       .then(stream => {
@@ -422,11 +497,8 @@ async function setLocalStream(mediaConstraints) {
         // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
   
         document.getElementById('cameraBox').appendChild(vidContainer); 
-
-
-
+        console.log('Stream has been set');
       });
-    console.log('Stream has been set');
   } catch (error) {
     console.error('Could not get user media', error)
   }
@@ -595,7 +667,10 @@ var joinRoom = async function () {
 
     //Start everything webRTC
     //This should initiate a call with EVERYONE else in the lobby
-    socket.emit('start_call', socket.id);
+    socket.emit('prep_call', {
+      socketId: socket.id,
+      name: localName,
+    });
     // await createOffer();
   }
 };

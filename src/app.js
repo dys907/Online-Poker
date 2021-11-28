@@ -253,10 +253,10 @@ io.on("connection", (socket) => {
 
 // ***************** WEBRTC *****************
 //we're passing in the socket ID directly into data from client
-  socket.on('start_call', (socketId) => {
+  socket.on('prep_call', (data) => {
     let game;
     rooms.forEach(gameRoom => {
-      let playerObj = gameRoom.getPlayerBySocket(socketId);
+      let playerObj = gameRoom.getPlayerBySocket(data.socketId);
 
       gameRoom.players.forEach(player => {
         if (player.username == playerObj.username) {
@@ -264,8 +264,22 @@ io.on("connection", (socket) => {
         }
       });
     });
-    game.emitPlayers('start_call', socketId);
+    game.emitPlayers('prep_call', data);
   });
+
+  socket.on('start_call', (data) => {
+    let game;
+    rooms.forEach(gameRoom => {
+      let playerObj = gameRoom.getPlayerBySocket(data.socketId);
+
+      gameRoom.players.forEach(player => {
+        if (player.username == playerObj.username) {
+          game = gameRoom;
+        }
+      });
+    });
+    game.emitPlayers('prep_call', data);
+  })
 
   socket.on('webrtc_offer', (event) => {
     let game;
@@ -293,13 +307,19 @@ io.on("connection", (socket) => {
       (r) => r.findPlayer(socket.id).socket.id === socket.id
     );
     console.log(`Broadcasting webrtc_answer event to peers in room`);
+    // console.log(game);
+    let answererName = game.getPlayerBySocket(event.answererId).username;
+    console.log(answererName);
+
+    // answererName: game.getPlayerBySocket(event.answererId),
     game.emitPlayers('webrtc_answer', {
       type: "answer",
       sdp: event.sdp,
       answererId: event.answererId,
-      answererName: game.getPlayerBySocket(event.answererId),
+      answererName: answererName,
       targetId: event.targetId,
     });
+    console.log("did this emit break it?");
   });
   // Not targeted but should be.
   socket.on('webrtc_ice_candidate', (event) => {
