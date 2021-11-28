@@ -26,7 +26,7 @@ let host = false;
 var roomId;
 var serverConnection;
 var peerConnections = {};
-
+var hasSetLocalStream = false;
 const playerStreams = [];
 
 var iceServers = {
@@ -432,6 +432,8 @@ socket.on('webrtc_answer', async (event) => {
 });
 
 async function setLocalStream(mediaConstraints) {
+  if (hasSetLocalStream) return;
+  hasSetLocalStream = true;
   let stream;
   console.log('SET LOCAL STREAM');
   try {
