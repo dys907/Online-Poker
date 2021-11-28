@@ -281,8 +281,24 @@ h5 {
   display: none;
   align-items: center;
   justify-content: center;
-  
 }
+
+.videoLabel {
+  color: white;
+  font: bold 18px Arial, Sans-Serif;
+  line-height: 18px;
+  height: 18px;
+  
+  background: rgba(0, 0, 0, 0.55);
+  
+  position: absolute;
+  /* left: 0; */
+  /* bottom: 0; */
+  margin-top: -30px;
+  margin-left: 0px;
+  padding: 4px;
+}
+
 
 .videoContainer {
   margin-left: 5px;

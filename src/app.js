@@ -79,7 +79,15 @@ io.on("connection", (socket) => {
     if (game == undefined) {
       socket.emit("gameBegin", undefined);
     } else {
-      game.emitPlayers("gameBegin", { code: data.code });
+      console.log("START GAME");
+      // const playerSockets = [];
+      // game.getPlayersArray.forEach(p => {
+      //   playerSockets.push(p.socket);
+      // })
+      game.emitPlayers("gameBegin", { 
+        code: data.code,
+        players: game.getPlayersArray(),
+      });
       game.startGame();
     }
   });

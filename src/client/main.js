@@ -21,27 +21,19 @@ const mediaConstraints = {
 let localName;
 let localUuid;
 let localStream;
-setLocalStream(mediaConstraints);
 let host = false;
 
 var roomId;
 var serverConnection;
 var peerConnections = {};
 
-// Free STUN servers
-// const iceServers = {
-//   iceServers: [
-//     { urls: 'stun:stun.l.google.com:19302' },
-//     { urls: 'stun:stun1.l.google.com:19302' },
-//   ],
-// }
+const playerStreams = [];
 
 var iceServers = {
   'iceServers': [
     { 'urls': 'stun:stun.stunprotocol.org:3478' },
     { 'urls': 'stun:stun.l.google.com:19302' },
   ],
-  
 };
 
 var socket = io.connect();
@@ -53,11 +45,11 @@ socket.on('playerDisconnected', function (data) {
 
 socket.on('hostRoom', async function (data) {
   if (data != undefined) {
-    if (data.players.length >= 11) {
+    if (data.players.length >= 6) {
       $('#hostModalContent').html(
         '<h5>Code:</h5><code>' +
           data.code +
-          '</code><br /><h5>Warning: you have too many players in your room. Max is 11.</h5><h5>Players Currently in My Room</h5>'
+          '</code><br /><h5>Warning: you have too many players in your room. Max is 5.</h5><h5>Players Currently in My Room</h5>'
       );
       $('#playersNames').html(
         data.players.map(function (p) {
@@ -91,10 +83,6 @@ socket.on('hostRoom', async function (data) {
           return '<span>' + p + '</span><br />';
         })
       );
-
-      // await createOffer();
-      // setUpPeer(socket.id, localName, true);
-      // peerConnections[socket.id].pc.createOffer().then(description => createdDescription(description, socket.id)).catch(errorHandler);
 
     }
   } else {
@@ -231,8 +219,11 @@ socket.on('gameBegin', function (data) {
   if (data == undefined) {
     alert('Error - invalid game.');
   } else {
+
     $('#gameDiv').show();
-    // $('#cameraBox').show();
+
+    mapCameras(data.players);
+    $('#cameraBox').show();
     $('#cameraBox').css('display', 'flex');
     $('#cameraBox').css('flex-direction', 'row');
     $("#powerUpLogContainer").show();
@@ -241,69 +232,47 @@ socket.on('gameBegin', function (data) {
   }
 });
 
-// socket.on('startCall',  async (peerUuid) => {
-//   // Possibly should be when the user joins the room, as 
-//   // no networking is needed to establish this part.
-//   console.log('Setting local stream');
-//   await setLocalStream(mediaConstraints);
-
-//   console.log('Socket event callback: startCall');
-//   rtcPeerConnection = new RTCPeerConnection();
-//   addLocalTracks(rtcPeerConnection);
-//   rtcPeerConnection.ontrack = setRemoteStream;
-//   rtcPeerConnection.onicecandidate = sendIceCandidate;
-//   await createOffer(rtcPeerConnection);
-// })
+function mapCameras(playerNames) {
+  console.log('map cameras called');
+  playerNames.forEach(p => {
+    playerStreams.forEach(ps => {
+      if (p == ps.id) {
+        document.getElementById('cameraBox').appendChild(ps);
+      } 
+    });
+  });
+  playerStreams.forEach(el => {
+    delete(el);
+  });
+}
 
 // -----------------------------------------------------
 // ------------------- Start of webRTC -----------------
 // -----------------------------------------------------
 
-/**
- * 
- * Caller sends socket ID to server
- * Server relays that to everyone else
- * Everyone else creates a local desc of their socket in peer connections
- * Caller creates local description?
- * And then creates answer?
- * 
- * Caller creates the offer
- * Server relays that offer to everyone else
- * Everyone else generates answer
- * Sends back to caller
- * 
- * 
- * 
- */
-
 socket.on('prep_call', (data) => {
   if (data.socketId === socket.id) return;
 
-  console.log("Who am i PREP CALL");
-    console.log("target: "+ data.socketId);
-    console.log("me: "+ socket.id);
+  // console.log("Who am i PREP CALL");
+  // console.log("target: "+ data.socketId);
+  // console.log("me: "+ socket.id);
 
-  //Set up peer?
   setUpPeer(data.socketId, data.name, true);
-  // createOffer(socketId);
   
   socket.emit('start_call', {
     socketId: socket.id,
     name: localName,
     target: data.socketId,
   });
-
 });
 
 socket.on('start_call', (data) => {
   if (data.target === socket.id) {
-    setUpPeer(data.socketId, localName, true);
-
-    console.log("Who am i START CALL:");
-    console.log("target: "+data.target);
-    console.log("me: "+ data.socketId);
+    setUpPeer(data.socketId, data.name, true);
+    // console.log("Who am i START CALL:");
+    // console.log("target: "+data.target);
+    // console.log("me: "+ data.socketId);
     createOffer(data.socketId);
-
   }
 });
 
@@ -311,20 +280,14 @@ socket.on('start_call', (data) => {
 //Is called when client clicks JOIN ROOM
 async function createOffer(targetSocket) {
   try {
-   
-
     await peerConnections[targetSocket].pc.createOffer()
     .then(async (offer) => {
-      
-      console.log("Creating offer function called, making offer");
-      console.log(peerConnections[targetSocket].pc);
-      console.log(peerConnections[targetSocket].pc.signalingState);
+      // console.log("Creating offer function called, making offer");
+      // console.log(peerConnections[targetSocket].pc);
+      // console.log(peerConnections[targetSocket].pc.signalingState);
+      // console.log(`TARGET SOCKET IN CREATEOFFER: ${targetSocket}`);
 
-      // console.log(offer);
-      console.log(`TARGET SOCKET IN CREATEOFFER: ${targetSocket}`);
       await peerConnections[targetSocket].pc.setLocalDescription(offer);
-
-      console.log(peerConnections[targetSocket].pc.signalingState);
 
       // console.log("client socket id in createOffer: "+socket.id);
       socket.emit('webrtc_offer', {
@@ -346,26 +309,22 @@ function setUpPeer(socketId, displayName, initCall = false) {
   peerConnections[socketId].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, socketId);
   // localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, localStream));
   peerConnections[socketId].pc.addStream(localStream);
-
 }
 
 function checkPeerDisconnect(event, socketId) {
   var state = peerConnections[socketId].pc.iceConnectionState;
-  console.log(`connection disconnect with peer ${socketId}`);
+  console.log(`connection disconnect with peer ${peerConnections[socketId].displayName}`);
   if (state === "failed" || state === "closed" || state === "disconnected") {
+    let disconnectedName = peerConnections[socketId].displayName;
+    document.getElementById('cameraBox').removeChild(document.getElementById(disconnectedName));
     delete peerConnections[socketId];
-    document.getElementById('videos').removeChild(document.getElementById('remoteVideo_' + socketId));
   }
 }
 
 function setCameraPortrait(event, socketId) {
   console.log(`SET CAMERA: got remote stream, peer ${socketId}`);
   // console.log(event);
-
-
-
   if (event.track.kind == "audio") return;
-
   const cameraContainer = document.getElementById("cameraBox");
 
   let vidElement = document.createElement('video');
@@ -376,26 +335,28 @@ function setCameraPortrait(event, socketId) {
   vidElement.height = 120;
 
   let vidContainer = document.createElement('div');
-  vidContainer.setAttribute('id', 'remoteVideo_' + socketId);
+  vidContainer.setAttribute('id', peerConnections[socketId].displayName);
   vidContainer.setAttribute('class', 'videoContainer');
   vidContainer.appendChild(vidElement);
-  // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
+  vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
 
-  document.getElementById('cameraBox').appendChild(vidContainer);
+  playerStreams.push(vidContainer);
 }
 
+function makeLabel(label) {
+  var vidLabel = document.createElement('div');
+  vidLabel.appendChild(document.createTextNode(label));
+  vidLabel.setAttribute('class', 'videoLabel');
+  return vidLabel;
+}
 
 function gotIceCandidate(event, targetSocketId) {
   // console.log("got ice candidate check1");
   // if (targetSocketId !== socket.id) return;
   // console.log("got ice candidate check2");
-
   if (event.candidate != null) {
     console.log("EVENT.CANDIDATE FOR ICE CANDIDATE IS VALID");
     // console.log(event);
-
-    //event => { isTrusted : true}
-    // event.candidate => { candidate stuff (?)}
 
     socket.emit('webrtc_ice_candidate', {
       ice: event.candidate,
@@ -404,14 +365,12 @@ function gotIceCandidate(event, targetSocketId) {
     });
   }
 }
-let count = 0;
+
 // Handles untargeted calls
 socket.on('webrtc_ice_candidate', async (event) => {
-  console.log("is webrtc-ice_candidate called at all?");
   if (event.dest == socket.id) {
     try {
       console.log("adding ice candidate");
-      
       // await peerConnections[event.fromSocketId].pc.addIceCandidate(new RTCIceCandidate(event.ice));
       await peerConnections[event.fromSocketId].pc.addIceCandidate(event.ice);
       console.log(peerConnections[event.fromSocketId].pc);
@@ -430,20 +389,16 @@ socket.on('webrtc_offer', async (event) => {
   setUpPeer(event.requesterSocketId, event.requesterDisplayName);
   console.log('STATE before setRemote: ' + peerConnections[event.requesterSocketId].pc.signalingState);
 
-
   //Create answer
   // console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
   await peerConnections[event.requesterSocketId].pc.setRemoteDescription(event.sdp)
     .then(async () => {
-      console.log("1st then");
-      console.log('STATE IN 1st THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
-
+      // console.log("1st then");
+      // console.log('STATE IN 1st THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
       await peerConnections[event.requesterSocketId].pc.createAnswer()
     .then(async (sessionDescription) => {
-      console.log("2nd then");
-      console.log('STATE IN 2nd THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
-
-
+      // console.log("2nd then");
+      // console.log('STATE IN 2nd THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
       await peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
 
       console.log('STATE IN THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
@@ -458,31 +413,18 @@ socket.on('webrtc_offer', async (event) => {
     .catch(e => {
       console.log(`Error creating webrtc offer in listener: ${e}`);
     });
-
   });
-  // console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
-
-    
-  
 });
 
-// Better to broadcast only to the desired person.
-// Could use player.emit to target emit only to 1 person.
 socket.on('webrtc_answer', async (event) => {
   console.log('Socket event callback: webrtc_answer');
   // console.log(peerConnections[event.answererId].pc);
-
   if (event.targetId == socket.id) {
-    console.log("test1");
     // console.log(peerConnections[event.answererId].pc);
     console.log(`AnswererID in WEBRTC_ANSWER: ${event.answererId}`);
-
     // setUpPeer(event.answererId, event.answererName);
     // console.log(peerConnections[event.answererId].pc.signalingState);
-    
-    console.log("test2");
     await peerConnections[event.answererId].pc.setRemoteDescription(event.sdp);
-    console.log("test3");
   }
   // peerConnections[socketId].pc.setRemoteDescription(new RTCSessionDescription(event.sdp));
 });
@@ -505,42 +447,20 @@ async function setLocalStream(mediaConstraints) {
         vidElement.height = 120;
       
         let vidContainer = document.createElement('div');
-        vidContainer.setAttribute('id', 'remoteVideo_' + "host");
+        vidContainer.setAttribute('id', localName);
         vidContainer.setAttribute('class', 'videoContainer');
       
         vidContainer.appendChild(vidElement);
-        // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
-  
-        document.getElementById('cameraBox').appendChild(vidContainer); 
+        vidContainer.appendChild(makeLabel(localName));
+
+        playerStreams.push(vidContainer);
+ 
         console.log('Stream has been set');
       });
   } catch (error) {
     console.error('Could not get user media', error)
   }
-  
-
-  // localVideoComponent.srcObject = stream;
 }
-
-function addLocalTracks(rtcPeerConnection) {
-  localStream.getTracks().forEach((track) => {
-    console.log("rctcon " + rtcPeerConnection);
-    rtcPeerConnection.addTrack(track, localStream)
-  })
-}
-function setRemoteStream(event) {
-  remoteStream = event.stream;
-  this.setState({ remStream : event.streams[0]});
-}
-
-// function sendIceCandidate(event) {
-//   if (event.candidate) {
-//     socket.emit('webrtc_ice_candidate', {
-//       label: event.candidate.sdpMLineIndex,
-//       candidate: event.candidate.candidate,
-//     })
-//   }
-// }
 
 function errorHandler(error) {
   console.log(error);
@@ -620,7 +540,7 @@ socket.on('endHand', function (data) {
   );
 });
 
-var beginHost = function () {
+var beginHost = async function () {
   if ($('#hostName-field').val() == '') {
     $('.toast').hide();
     $('#hostModal').closeModal();
@@ -631,6 +551,9 @@ var beginHost = function () {
     $('#joinButton').removeClass('disabled');
   } else {
     localName = $('#hostName-field').val();
+    await setLocalStream(mediaConstraints);
+
+    // document.getElementsByClassName('videoLabel')[0].innerHTML=localName;
     socket.emit('host', { username: $('#hostName-field').val() });
     $('#joinButton').addClass('disabled');
     $('#joinButton').off('click');
@@ -661,6 +584,7 @@ var joinRoom = async function () {
     roomId = $('#code-field').val();
     // Save display name globally.
     localName = $('#joinName-field').val();
+    await setLocalStream(mediaConstraints);
 
     //Set the local stream
     if (navigator.mediaDevices.getUserMedia) {

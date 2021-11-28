@@ -33,6 +33,11 @@ const Player = function (playerName, socket, debug) {
   this.getUsername = () => {
     return this.username;
   };
+
+  this.getSocket = () => {
+    return this.socket;
+  };
+  
   this.getBuyIns = () => {
     return this.buyIns;
   };

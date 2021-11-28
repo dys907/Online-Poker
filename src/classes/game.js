@@ -691,6 +691,16 @@ const Game = function (name, host) {
     return player;
   }
 
+ 
+
+  this.getPlayersSocketsArray= () => {
+    return this.players.map((p) => {
+      return p.getSocket();
+    });
+  };
+
+  
+
   this.getCode = () => {
     return this.gameName;
   };
