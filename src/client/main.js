@@ -22,6 +22,7 @@ let localName;
 let localUuid;
 let localStream;
 setLocalStream(mediaConstraints);
+let host = false;
 
 var roomId;
 var serverConnection;
@@ -39,7 +40,8 @@ var iceServers = {
   'iceServers': [
     { 'urls': 'stun:stun.stunprotocol.org:3478' },
     { 'urls': 'stun:stun.l.google.com:19302' },
-  ]
+  ],
+  
 };
 
 var socket = io.connect('https://localhost:3000');
@@ -91,8 +93,7 @@ socket.on('hostRoom', async function (data) {
       );
 
       // await createOffer();
-      setUpPeer(socket.id, localName, true);
-
+      // setUpPeer(socket.id, localName, true);
       // peerConnections[socket.id].pc.createOffer().then(description => createdDescription(description, socket.id)).catch(errorHandler);
 
     }
@@ -250,23 +251,29 @@ socket.on('gameBegin', function (data) {
 // ------------------- Start of webRTC -----------------
 // -----------------------------------------------------
 
+socket.on('start_call', (socketId) => {
+  if (socketId === socket.id) return;
+
+  createOffer(socketId)
+});
+
 //Creates the WebRTC handshake offer.
 //Is called when client clicks JOIN ROOM
-async function createOffer() {
+async function createOffer(targetSocket) {
   try {
-    
-    setUpPeer(socket.id, localName, true);
-    await peerConnections[socket.id].pc.createOffer()
+    setUpPeer(targetSocket, localName, true);
+    await peerConnections[targetSocket].pc.createOffer()
     .then((offer) => {
       console.log("Creating offer function called, making offer");
-      peerConnections[socket.id].pc.setLocalDescription(offer);
-      console.log('IN CREATE OFFER: '+ offer.type);
+      peerConnections[targetSocket].pc.setLocalDescription(offer);
 
-      console.log("client socket id in createOffer: "+socket.id);
+      console.log('IN CREATE OFFER: '+ offer.type);
+      // console.log("client socket id in createOffer: "+socket.id);
       socket.emit('webrtc_offer', {
         type: 'offer',
         sdp: offer,
-        requesterSocketId: socket.id
+        requesterSocketId: socket.id,
+        target: targetSocket,
       });
     });
   } catch (error) {
@@ -275,7 +282,6 @@ async function createOffer() {
 }
 
 function setUpPeer(socketId, displayName, initCall = false) {
-  console.log("SET UP PEER CALLED");
   peerConnections[socketId] = { 'displayName': displayName, 'pc': new RTCPeerConnection(iceServers) };
   peerConnections[socketId].pc.onicecandidate = event => gotIceCandidate(event, socketId);
   peerConnections[socketId].pc.ontrack = event => setCameraPortrait(event, socketId);
@@ -290,7 +296,7 @@ function setCameraPortrait(event, socketId) {
   console.log(`got remote stream, peer ${socketId}`);
   let vidElement = document.createElement('video');
   vidElement.setAttribute('autoplay', '');
-  vidElement.setAttribute('muted', 'false');
+  vidElement.setAttribute('muted', 'true');
   vidElement.srcObject = event.streams[0];
 
   let vidContainer = document.createElement('div');
@@ -309,7 +315,6 @@ function gotIceCandidate(event, targetSocketId) {
     console.log("EVENT.CANDIDATE FOR ICE CANDIDATE IS VALID");
     console.log(event);
 
-
     //event => { isTrusted : true}
     // event.candidate => { candidate stuff (?)}
 
@@ -320,11 +325,13 @@ function gotIceCandidate(event, targetSocketId) {
     });
   }
 }
-
+let count = 0;
 // Handles untargeted calls
 socket.on('webrtc_ice_candidate', async (event) => {
   if (event.dest == socket.id) {
     try {
+      count++;
+      console.log(`called ice candidate times: ${count}`);
       console.log("adding ice candidate");
       console.log(event);
       
@@ -338,60 +345,62 @@ socket.on('webrtc_ice_candidate', async (event) => {
 });
 
 socket.on('webrtc_offer', async (event) => {
+  if (event.target !== socket.id) return;
+
   console.log('Socket event callback: webrtc_offer');
-  console.log("event request socket id: "+event.requesterSocketId);
-  console.log("event socket id: "+socket.id);
-  console.log(event.requesterSocketId !== socket.id);
+  // console.log("event request socket id: "+event.requesterSocketId);
+  // console.log("event socket id: "+socket.id);
+  // console.log(event.requesterSocketId !== socket.id);
 
-  if (event.requesterSocketId !== socket.id) {
-    console.log(`requesters socket offer: ${event.requesterSocketId}`);
-    console.log(`socket offer: ${socket.id}`);
-    console.log(event.requesterSocketId !== socket.id);
-
-    // Set up remote
-    setUpPeer(event.requesterSocketId, event.requesterDisplayName);
-    //Create answer
-    
-    console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
-
-    peerConnections[event.requesterSocketId].pc.setRemoteDescription(event.sdp)
-      .then(() => {
-        console.log("1st then");
-        peerConnections[event.requesterSocketId].pc.createAnswer()
-      .then((sessionDescription) => {
-        console.log("2nd then");
-        peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
   
-        console.log('STATE IN THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
+  // console.log(`requesters socket offer: ${event.requesterSocketId}`);
+  // console.log(`socket offer: ${socket.id}`);
+  // console.log(event.requesterSocketId !== socket.id);
 
-        //targetId isnt' being set, where is this from???
-        socket.emit('webrtc_answer', {
-          type: 'answer',
-          sdp: sessionDescription,
-          answererId: socket.id,
-          targetId: event.requesterSocketId,
-        });
-      })
-      .catch(e => {
-        console.log(`Error creating webrtc offer in listener: ${e}`);
+  // Set up remote
+  setUpPeer(event.requesterSocketId, event.requesterDisplayName);
+  //Create answer
+  
+  // console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
+
+  peerConnections[event.requesterSocketId].pc.setRemoteDescription(event.sdp)
+    .then(() => {
+      console.log("1st then");
+      peerConnections[event.requesterSocketId].pc.createAnswer()
+    .then((sessionDescription) => {
+      console.log("2nd then");
+      peerConnections[event.requesterSocketId].pc.setLocalDescription(sessionDescription);
+
+      console.log('STATE IN THEN: ' + peerConnections[event.requesterSocketId].pc.signalingState);
+      //targetId isnt' being set, where is this from???
+      socket.emit('webrtc_answer', {
+        type: 'answer',
+        sdp: sessionDescription,
+        answererId: socket.id,
+        targetId: event.requesterSocketId,
       });
-
+    })
+    .catch(e => {
+      console.log(`Error creating webrtc offer in listener: ${e}`);
     });
-    console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
+
+  });
+  // console.log('STATE: ' + peerConnections[socket.id].pc.signalingState);
 
     
-  }
+  
 });
 
 // Better to broadcast only to the desired person.
 // Could use player.emit to target emit only to 1 person.
 socket.on('webrtc_answer', async (event) => {
   console.log('Socket event callback: webrtc_answer')
+  
   if (event.targetId == socket.id) {
     setUpPeer(event.answererId, event.answererName);
+    await peerConnections[event.answererId].pc.setRemoteDescription(event.sdp);
   }
   // peerConnections[socketId].pc.setRemoteDescription(new RTCSessionDescription(event.sdp));
-  await peerConnections[socketId].pc.setRemoteDescription(event.sdp);
 });
 
 async function setLocalStream(mediaConstraints) {
@@ -437,14 +446,14 @@ function setRemoteStream(event) {
   this.setState({ remStream : event.streams[0]});
 }
 
-function sendIceCandidate(event) {
-  if (event.candidate) {
-    socket.emit('webrtc_ice_candidate', {
-      label: event.candidate.sdpMLineIndex,
-      candidate: event.candidate.candidate,
-    })
-  }
-}
+// function sendIceCandidate(event) {
+//   if (event.candidate) {
+//     socket.emit('webrtc_ice_candidate', {
+//       label: event.candidate.sdpMLineIndex,
+//       candidate: event.candidate.candidate,
+//     })
+//   }
+// }
 
 function errorHandler(error) {
   console.log(error);
@@ -538,6 +547,7 @@ var beginHost = function () {
     socket.emit('host', { username: $('#hostName-field').val() });
     $('#joinButton').addClass('disabled');
     $('#joinButton').off('click');
+    host = true;
   }
 };
 
@@ -584,7 +594,9 @@ var joinRoom = async function () {
     $('#hostButton').off('click');
 
     //Start everything webRTC
-    await createOffer();
+    //This should initiate a call with EVERYONE else in the lobby
+    socket.emit('start_call', socket.id);
+    // await createOffer();
   }
 };
 

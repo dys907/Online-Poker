@@ -250,6 +250,23 @@ io.on("connection", (socket) => {
       // }
     }
   });
+
+// ***************** WEBRTC *****************
+//we're passing in the socket ID directly into data from client
+  socket.on('start_call', (socketId) => {
+    let game;
+    rooms.forEach(gameRoom => {
+      let playerObj = gameRoom.getPlayerBySocket(socketId);
+
+      gameRoom.players.forEach(player => {
+        if (player.username == playerObj.username) {
+          game = gameRoom;
+        }
+      });
+    });
+    game.emitPlayers('start_call', socketId);
+  });
+
   socket.on('webrtc_offer', (event) => {
     let game;
     rooms.forEach(gameRoom => {
@@ -264,10 +281,11 @@ io.on("connection", (socket) => {
  
     console.log(`Broadcasting webrtc_offer event to peers in room`);
     game.emitPlayers('webrtc_offer', {
-      type: "offer",
+      type: 'offer',
       sdp: event.sdp,
       requesterSocketId: event.requesterSocketId,
-      requesterDisplayName: game.getPlayerBySocket(event.requesterSocketId).username
+      requesterDisplayName: game.getPlayerBySocket(event.requesterSocketId).username,
+      target: event.target,
     });
   });
   socket.on('webrtc_answer', (event) => {
@@ -280,7 +298,7 @@ io.on("connection", (socket) => {
       sdp: event.sdp,
       answererId: event.answererId,
       answererName: game.getPlayerBySocket(event.answererId),
-      targetId: event.targetId
+      targetId: event.targetId,
     });
   });
   // Not targeted but should be.
