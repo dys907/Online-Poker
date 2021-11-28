@@ -105,7 +105,6 @@ io.on("connection", (socket) => {
     if (game != undefined) {
       if (game.roundInProgress === false) {
         if((game.roundNum + 1) % 2 == 0) {
-          console.log("We are here");
           givePlayerPowerUps(game);
         }
         game.startNewRound();
@@ -205,11 +204,21 @@ io.on("connection", (socket) => {
         powerUpName: powerUpName,
         time: fulltime,
       })
-
       switch (powerup) {
         case "showCommunityCard":
-          const lastCard = game.thisRoundsCards[4];
-          socket.emit(powerup, lastCard);
+          if (game.roundData.bets.length == 1) {
+            const cardOne = game.thisRoundsCards[0];
+            const cardTwo = game.thisRoundsCards[1];
+            const cardThree = game.thisRoundsCards[2];
+            socket.emit(powerup, [cardOne, cardTwo, cardThree])
+          } else if (game.roundData.bets.length == 2) {
+            const cardFour = game.thisRoundsCards[3];
+            socket.emit(powerup, [cardFour]);
+          } else {
+            const cardFive = game.thisRoundsCards[4];
+            socket.emit(powerup, [cardFive]);
+          }
+
           break;
 
         case 'ghostBet':
@@ -217,7 +226,7 @@ io.on("connection", (socket) => {
           break;
         case "showPlayerCard":
           const revealCard = otherplayer.cards[0];
-          socket.emit(powerup, revealCard);
+          socket.emit(powerup, {name: otherplayer.username, card: revealCard});
           break;
         case "swapWithPlayer":
           const thisPlayersCards = player.cards;
@@ -279,23 +288,6 @@ io.on("connection", (socket) => {
       socket.emit("selectTarget", {
         playerNames: nameArr,
       });
-      // switch (powerup) {
-      //   // probably doesn't need switch
-      //   case "showPlayerCard":
-      //     let nameArr = [];
-      //     game.players.forEach((p) => {
-      //       nameArr.push(p.username);
-      //     });
-      //     // back to client with list of players and power up name
-      //     socket.emit("selectTarget", {
-      //       powerup: powerup,
-      //       playerNames: nameArr,
-      //     });
-      //   // const revealCard = otherplayer.cards[0];
-      //   // socket.emit(powerup, revealCard);
-      //   default:
-      //     break;
-      // }
     }
   });
 

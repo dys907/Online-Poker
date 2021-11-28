@@ -163,7 +163,7 @@ code {
 #poker-table {
   background-repeat: no-repeat;
   margin: 0 auto;
-  height: 461px;
+  height: 500px;
   width: 745px;
   display: flex;
   flex-direction: row;
@@ -265,6 +265,7 @@ h5 {
   border: black 1px solid;
   border-radius: 25px;
   opacity: 0.9;
+  z-index: 15;
 }
 
 #powerUpToolTip {
@@ -276,26 +277,47 @@ h5 {
 
 }
 
-#powerUpLogContainer {
+#powerUpLogContainer, #revealedCardsLogContainer {
   display: none;
   position: absolute;
-  top: 0;
-  right: 0;
-  background-color: #c0d6e4;
+  top: 25vh;
+  background-color: #5997fa;
+  border-radius: 10px;
+  padding: 10px;
+  border: 5px solid white;
+  overflow-wrap: break-word;
 }
 
-#powerUpLog {
+#powerUpLogContainer {
+  right: 0;
+  margin-right: 20px;
+}
+
+#revealedCardsLogContainer {
+  margin-left: 20px;
+}
+
+#powerUpLog, #revealedCardsLog {
   width: 25vw;
   height: 20vh;
   overflow-y: scroll;
-  scrollbar-color: #2e64bc, #2faabc;
 }
 
-#powerUpLogText {
-  color: #2e64bc;
+#powerUpLogText, #revealedCardsLogText {
+  color: white;
   font-size: medium;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
+
+#powerUpAnnounce {
+  color: white;
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 52vh;
+  z-index: 10;
+}
+
 
 .power-up-container {
   text-align: center;
@@ -311,4 +333,33 @@ h5 {
   display: none;
   width:50px;
   height:50px;
+}
+
+#timer {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 56vh;
+  margin-right: 20px;
+}
+
+#faq {
+  padding: 20px;
+  background-color: white;
+  border-radius: 10px;
+  border: 3px solid black;
+  display: none;
+  z-index: 20;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 10px;
+}
+
+#faqBtn {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 10px;
 }

@@ -13,7 +13,7 @@ const PowerUp = {
         name: 'showCommunityCard',
         logName: 'Peek at community card',
         hasTarget: false,
-        description: 'This powerup allows you to see a card in the river',
+        description: 'This powerup allows you to see cards in the river',
         weight:10,
         src:'img/see_community.png'
     },
@@ -58,7 +58,7 @@ const PowerUp = {
         name: 'nozdormu',
         logName: "Nozdormu - Limit a player's turn to 15 seconds",
         hasTarget: true,
-        description: 'Force a player to make a move within 15 seconds, or force this player to fold. Hearthstone reference',
+        description: 'Force a player to make a move within 15 seconds, or this player will automatically fold. Hearthstone reference',
         weight:4,
         src:'img/call_clock.png'
     },
@@ -67,7 +67,7 @@ const PowerUp = {
         name: 'forceDC',
         logName: "Force a player to disconnect",
         hasTarget: true,
-        description: 'Force a player to disconnect',
+        description: 'Disconnect a player from this game',
         weight:1,
         src:'img/force_disconnect.png'
     }

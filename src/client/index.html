@@ -51,7 +51,7 @@
 						<button onClick=call() id="usernameCall" class="btn white black-text menuButtons">Call</button>
 						<button href="#raiseModal" onClick=updateRaiseModal() id="usernameRaise"
 							class="btn white black-text modal-trigger menuButtons">Raise</button>
-							<span id="powerUpToolTip"></span>	
+							<br/><span id="powerUpToolTip"></span>	
 					</div>
 					<fieldset class="power-up-container">
 						<legend style="color: white;">&nbsp;Power Ups&nbsp;</legend>
@@ -195,12 +195,46 @@
 			<button id="close-target-modal" onclick=hideTarget() class="waves-effect waves-light btn-flat">CLOSE</a>
 		</div>
 	</div>
+	<div id="revealedCardsLogContainer">
+		<b>Cheat Sheet</b><br/>
+		<div id="revealedCardsLog">
+			<p id="revealedCardsLogText">
+			</p>
+		</div>
+	</div>
 	<div id="powerUpLogContainer">
 		<b>Power Up Log</b><br/>
 		<div id="powerUpLog">
 			<p id="powerUpLogText">
 			</p>
 		</div>
+	</div>
+	<b id="powerUpAnnounce"></b>
+	<h1 id="timer"></h1>
+	<h1 id="faqBtn" onclick=showFAQ()>?</h1>
+	<div id="faq">
+		<p>Welcome to our version of Online Poker. In addition to a normal poker game, you'll also get a "Power Up" sometimes to help you gain an advantage over your opponents.</p>
+
+		<p>You'll randomly gain one power up every other round, and you can hold at most two power ups. You'll not lose them when a new round starts.</p>
+		
+		<p>Power ups you gain will be in the Power Ups section at the bottom. Hover over them to see a tooltip.</p>
+		
+		<p>Below is the list of power ups available and what they do.</p>
+		
+		<p>Peek at community card: This powerup allows you to see cards in the river</p>
+		
+		<p>Peek at another player's card: This powerup allows you to choose a player and see a card they have</p>
+		
+		<p>Swap cards with another player: This powerup allows you to choose a player and swap cards with them</p>
+		
+		<p>Swap chip stack with another player: Swaps your chip stack with another targetted player</p>
+		
+		<p>Redeal a new hand: Deals a new hand for yourself</p>
+		
+		<p>Nozdormu - Limit a player's turn to 15 seconds: Force a player to make a move within 15 seconds, or this player will automatically fold. Hearthstone reference</p>
+		
+		<p>Force a player to disconnect: Disconnect a player from this game</p>
+		<h3 id="closeFAQ" onclick=closeFAQ()>Close</h3>
 	</div>
 
 	<footer class="page-footer white">

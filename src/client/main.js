@@ -125,17 +125,20 @@ socket.on('dealt', function (data) {
 
 socket.on('rerender', function (data) {
   if (data.myBet == 0) {
-    $('#usernamesCards').text(data.username + ' - My Cards');
+    $("#usernamesCards").text(data.username + " - My Cards");
   } else {
-    $('#usernamesCards').text(data.username + ' - My Bet: $' + data.myBet);
+    $("#usernamesCards").text(data.username + " - My Bet: $" + data.myBet);
   }
-  if (data.community != undefined)
-    $('#communityCards').html(
+  if (data.community != undefined) {
+    $("#revealedCardsLogText").empty();
+    $("#communityCards").html(
       data.community.map(function (c) {
         return renderCard(c);
       })
     );
-  else $('#communityCards').html('<p></p>');
+  } else {
+    $("#communityCards").html("<p></p>");
+  }
   if (data.currBet == undefined) data.currBet = 0;
   $('#table-title').text(
     'Game ' +
@@ -184,6 +187,8 @@ socket.on('gameBegin', function (data) {
   } else {
     $('#gameDiv').show();
     $("#powerUpLogContainer").show();
+    $("#revealedCardsLogContainer").show();
+    $("#faqBtn").show();
   }
 });
 
@@ -206,7 +211,7 @@ socket.on('reveal', function (data) {
   }
   $('#table-title').text('Hand Winner(s): ' + data.winners);
   $('#playNext').html(
-    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">Start Next Game</button>'
+    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">NEXT GAME</button>'
   );
   $('#blindStatus').text(data.hand);
   $('#usernamesMoney').text('$' + data.money);
@@ -231,7 +236,7 @@ socket.on('endHand', function (data) {
   $('#usernameRaise').hide();
   $('#table-title').text(data.winner + ' takes the pot of $' + data.pot);
   $('#playNext').html(
-    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">Start Next Game</button>'
+    '<button onClick=playNext() id="playNextButton" class="btn white black-text menuButtons">NEXT GAME</button>'
   );
   $('#blindStatus').text('');
   if (data.folded == 'Fold') {
@@ -778,7 +783,20 @@ socket.on('displayPossibleMoves', function (d) {
   if (data.raise == 'yes') $('#usernameRaise').show();
   else $('#usernameRaise').hide();
   let hasTimer = d.hasTimer;
-  if (hasTimer) setTimeout(() => fold(), 15000);
+  if (hasTimer) {
+    $("#timer").show();
+    let startTime = 15;
+    $("#timer").html(startTime);
+    let countdown = setInterval(() => {
+      startTime--;
+      $("#timer").html(startTime);
+    }, 1000);
+    setTimeout(() => {
+      clearInterval(countdown);
+      $("#timer").hide();
+      fold();
+    }, 15000);
+  }
 });
 
 socket.on('usePowerUp', function (d) {
@@ -822,19 +840,45 @@ socket.on('updatePowerUpLog', function(data) {
   if (target) fullMsg += ' on ' + target;
   $("#powerUpLogText").append("<br/>" + fullMsg);
   $("#powerUpLog").scrollTop($("#powerUpLog")[0].scrollHeight);
+  $("#powerUpAnnounce").html("Latest: " + fullMsg);
+  $("#powerUpAnnounce").show();
+  setTimeout(() => {
+    $("#powerUpAnnounce").empty();
+    $("#powerUpAnnounce").hide();
+  }, 3000);
+
 })
 
 // client listener
 // get the card data and show it (modal? toast? image somewhere)
 socket.on('showCommunityCard', function (data) {
-  console.log(data);
+  let fullMsg = "Community Card(s): <br/>";
+  data.map((d) => {
+    fullMsg += d.value;
+    fullMsg += " of ";
+    fullMsg += d.suit;
+    fullMsg += "<br/>";
+  })
+  $("#revealedCardsLogText").append(fullMsg);
+  $("#revealedCardsLog").scrollTop($("#revealedCardsLog")[0].scrollHeight);
+  //console.log(data);
 })
 
 // client listener
 // get the card and show it
-socket.on('showPlayerCard', function(data) {
-  console.log(data);
-})
+socket.on("showPlayerCard", function (data) {
+  let d = data.card;
+  let n = data.name;
+  let fullMsg = "One of " + n + "'s Card: ";
+
+  fullMsg += d.value;
+  fullMsg += " of ";
+  fullMsg += d.suit;
+  fullMsg += "<br/>";
+
+  $("#revealedCardsLogText").append(fullMsg);
+  $("#revealedCardsLog").scrollTop($("#revealedCardsLog")[0].scrollHeight);
+});
 
 socket.on('swapWithPlayer', function(data) {
   $('#mycards').html(
@@ -863,6 +907,11 @@ socket.on('forceDC', function(data) {
   Materialize.toast(data + " has disconnected you", 4000);
   $("#gameDiv").remove();
   $("#powerUpLogContainer").remove();
+  $("#revealedCardsLogContainer").remove();
+  $("#powerUpAnnounce").remove();
+  $("#faq").remove();
+  $("#faqBtn").remove();
+  $("#timer").remove();
   $(".page-footer").remove();
   setTimeout(() => {
     location.reload();
@@ -898,6 +947,14 @@ function usePowerUp(num) {
     powerUpNum: num,
     listener: 'usePowerUp',
   });
+}
+
+function showFAQ() {
+  $("#faq").show();
+}
+
+function closeFAQ() {
+  $("#faq").hide();
 }
 
 function renderSelf(data) {
