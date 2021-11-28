@@ -9,6 +9,7 @@ $(document).ready(function () {
 // WebRTC Specifics
 const localVideoComponent = document.getElementById('local-video')
 const remoteVideoComponent = document.getElementById('remote-video')
+
 const mediaConstraints = {
   audio: true,
   video: {
@@ -250,6 +251,7 @@ socket.on('gameBegin', function (data) {
 // -----------------------------------------------------
 
 //Creates the WebRTC handshake offer.
+//Is called when client clicks JOIN ROOM
 async function createOffer() {
   try {
     
@@ -273,11 +275,15 @@ async function createOffer() {
 }
 
 function setUpPeer(socketId, displayName, initCall = false) {
+  console.log("SET UP PEER CALLED");
   peerConnections[socketId] = { 'displayName': displayName, 'pc': new RTCPeerConnection(iceServers) };
   peerConnections[socketId].pc.onicecandidate = event => gotIceCandidate(event, socketId);
   peerConnections[socketId].pc.ontrack = event => setCameraPortrait(event, socketId);
   peerConnections[socketId].pc.oniceconnectionstatechange = event => checkPeerDisconnect(event, socketId);
   localStream.getTracks().forEach(track => peerConnections[socketId].pc.addTrack(track, localStream));
+}
+function checkPeerDisconnect(event, socketId) {
+  console.log("Disconnect called");
 }
 
 function setCameraPortrait(event, socketId) {
@@ -294,15 +300,21 @@ function setCameraPortrait(event, socketId) {
   // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
 
   document.getElementById('cameraBox').appendChild(vidContainer);
-
 }
 
 function gotIceCandidate(event, targetSocketId) {
+  if (targetSocketId !== socket.id) return;
+
   if (event.candidate != null) {
     console.log("EVENT.CANDIDATE FOR ICE CANDIDATE IS VALID");
     console.log(event);
+
+
+    //event => { isTrusted : true}
+    // event.candidate => { candidate stuff (?)}
+
     socket.emit('webrtc_ice_candidate', {
-      ice: event.ice,
+      ice: event.candidate,
       fromSocketId: socket.id,
       dest: targetSocketId
     });
@@ -388,11 +400,28 @@ async function setLocalStream(mediaConstraints) {
     stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
       .then(stream => {
         localStream = stream;
+
+        let vidElement = document.createElement('video');
+        vidElement.setAttribute('autoplay', '');
+        vidElement.setAttribute('muted', 'true');
+        vidElement.srcObject = localStream;
+      
+        let vidContainer = document.createElement('div');
+        vidContainer.setAttribute('id', 'remoteVideo_' + "host");
+        vidContainer.setAttribute('class', 'videoContainer');
+        vidContainer.appendChild(vidElement);
+        // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
+  
+        document.getElementById('cameraBox').appendChild(vidContainer); 
+
+
+
       });
     console.log('Stream has been set');
   } catch (error) {
     console.error('Could not get user media', error)
   }
+  
 
   // localVideoComponent.srcObject = stream;
 }
