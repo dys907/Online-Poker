@@ -226,6 +226,8 @@ socket.on('gameBegin', function (data) {
     $('#cameraBox').show();
     $('#cameraBox').css('display', 'flex');
     $('#cameraBox').css('flex-direction', 'row');
+    $("#cameraBox").css('margin-top', '50px');
+   //$("#cameraBox").css('position','absolute').css('top','50px');
     $("#powerUpLogContainer").show();
     $("#revealedCardsLogContainer").show();
     $("#faqBtn").show();
