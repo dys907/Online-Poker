@@ -16,8 +16,8 @@ const app = express();
 // };
 
 // const server = https.createServer(config, app);
-const server = https.createServer(app);
-// const server = http.createServer(app);
+// const server = https.createServer(app);
+const server = http.createServer(app);
 const io = socketio(server);
 
 const PORT = process.env.PORT || 3000;
@@ -458,8 +458,8 @@ server.listen(PORT, () => console.log(`hosting on port ${PORT}`));
 
 // Separate server to redirect from http to https
 //HTTP IS ON 3001
-http.createServer(function (req, res) {
-  console.log(req.headers['host']+req.url);
-  res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
-  res.end();
-}).listen(PORT + 1);
+// http.createServer(function (req, res) {
+//   console.log(req.headers['host']+req.url);
+//   res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+//   res.end();
+// }).listen(PORT + 1);
