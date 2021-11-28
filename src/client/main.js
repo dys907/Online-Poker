@@ -18,19 +18,10 @@ const mediaConstraints = {
     frameRate: {max: 30},
   },
 }
-
-const myMedia = {
-  audio: true,
-  video: {
-    width: {max: 320},
-    height: {max: 240},
-    frameRate: {max: 30},
-  },
-}
 let localName;
 let localUuid;
 let localStream;
-setLocalStream(myMedia);
+setLocalStream(mediaConstraints);
 let host = false;
 
 var roomId;
@@ -241,7 +232,9 @@ socket.on('gameBegin', function (data) {
     alert('Error - invalid game.');
   } else {
     $('#gameDiv').show();
-    $('#cameraBox').show();
+    // $('#cameraBox').show();
+    $('#cameraBox').css('display', 'flex');
+    $('#cameraBox').css('flex-direction', 'row');
     $("#powerUpLogContainer").show();
     $("#revealedCardsLogContainer").show();
     $("#faqBtn").show();
@@ -363,6 +356,8 @@ function setCameraPortrait(event, socketId) {
   console.log(`SET CAMERA: got remote stream, peer ${socketId}`);
   // console.log(event);
 
+
+
   if (event.track.kind == "audio") return;
 
   const cameraContainer = document.getElementById("cameraBox");
@@ -371,6 +366,8 @@ function setCameraPortrait(event, socketId) {
   vidElement.setAttribute('autoplay', '');
   vidElement.setAttribute('muted', 'false');
   vidElement.srcObject = event.streams[0];
+  vidElement.width = 160;
+  vidElement.height = 120;
 
   let vidContainer = document.createElement('div');
   vidContainer.setAttribute('id', 'remoteVideo_' + socketId);
@@ -490,16 +487,21 @@ async function setLocalStream(mediaConstraints) {
   try {
     stream = await navigator.mediaDevices.getUserMedia(mediaConstraints)
       .then(stream => {
+        // stream.getAudioTracks()[0].enabled = false;
         localStream = stream;
 
         let vidElement = document.createElement('video');
-        vidElement.setAttribute('autoplay', '');
-        vidElement.setAttribute('muted', 'true');
+        
+        vidElement.autoplay = true;
+        vidElement.muted = true;
         vidElement.srcObject = localStream;
+        vidElement.width = 160;
+        vidElement.height = 120;
       
         let vidContainer = document.createElement('div');
         vidContainer.setAttribute('id', 'remoteVideo_' + "host");
         vidContainer.setAttribute('class', 'videoContainer');
+      
         vidContainer.appendChild(vidElement);
         // vidContainer.appendChild(makeLabel(peerConnections[socketId].displayName));
   

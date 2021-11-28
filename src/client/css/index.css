@@ -277,9 +277,23 @@ h5 {
 
 }
 
-/* #cameraBox {
+#cameraBox {
   display: none;
-} */
+  align-items: center;
+  justify-content: center;
+  
+}
+
+.videoContainer {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+video {
+  width: 160;
+  height: 120;
+}
+
 
 
 
