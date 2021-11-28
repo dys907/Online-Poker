@@ -328,7 +328,7 @@ io.on("connection", (socket) => {
         }
       });
     });
-    game.emitPlayers('prep_call', data);
+    game.emitPlayers('start_call', data);
   })
 
   socket.on('webrtc_offer', (event) => {
