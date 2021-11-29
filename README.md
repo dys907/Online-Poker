@@ -1,7 +1,7 @@
 # WebRTC NodeJS Online Poker
-## _BCIT COMP 3940 Term project_
+_BCIT COMP 3940 Term project_
 
-# https://online-poker-3940.herokuapp.com/
+https://online-poker-3940.herokuapp.com/
 ## Contributors
 Group 2
 - [Ben Chin]
