@@ -13,7 +13,7 @@ const PowerUp = {
         name: 'showCommunityCard',
         logName: 'Peek at community card',
         hasTarget: false,
-        description: 'This powerup allows you to see cards in the river',
+        description: 'This powerup allows you to see cards in the community',
         weight:10,
         src:'img/see_community.png'
     },
