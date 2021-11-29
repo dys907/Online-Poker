@@ -152,6 +152,7 @@ const Game = function (name, host) {
     }
 
     this.roundNum++;
+    this.emitPlayers('clearRevealedCardsLog', {});
     this.rerender();
   };
 

@@ -123,9 +123,7 @@ io.on("connection", (socket) => {
     );
     if (game != undefined) {
       if (game.roundInProgress === false) {
-        //if((game.roundNum + 1) % 2 == 0) {
-          givePlayerPowerUps(game);
-        //}
+        givePlayerPowerUps(game);
         game.startNewRound();
       }
     }

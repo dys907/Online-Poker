@@ -28,6 +28,7 @@ var serverConnection;
 var peerConnections = {};
 var hasSetLocalStream = false;
 const playerStreams = [];
+let countdown;
 
 var iceServers = {
   'iceServers': [
@@ -164,7 +165,6 @@ socket.on('rerender', function (data) {
     $("#usernamesCards").text(data.username + " - My Bet: $" + data.myBet);
   }
   if (data.community != undefined) {
-    $("#revealedCardsLogText").empty();
     $("#communityCards").html(
       data.community.map(function (c) {
         return renderCard(c);
@@ -477,6 +477,10 @@ function playNext() {
   socket.emit('startNextRound', {});
 }
 
+socket.on('clearRevealedCardsLog', function (data) {
+  $("#revealedCardsLogText").empty();
+})
+
 socket.on('reveal', function (data) {
   $('#usernameFold').hide();
   $('#usernameCheck').hide();
@@ -624,10 +628,14 @@ var startGame = function (gameCode) {
 };
 
 var fold = function () {
+  $("#timer").hide();
+  clearInterval(countdown);
   socket.emit('moveMade', { move: 'fold', bet: 'Fold' });
 };
 
 var bet = function () {
+  $("#timer").hide();
+  clearInterval(countdown);
   if (parseInt($('#betRangeSlider').val()) == 0) {
     Materialize.toast('You must bet more than $0! Try again.', 4000);
   } else if (parseInt($('#betRangeSlider').val()) < 2) {
@@ -641,14 +649,20 @@ var bet = function () {
 };
 
 function call() {
+  $("#timer").hide();
+  clearInterval(countdown);
   socket.emit('moveMade', { move: 'call', bet: 'Call' });
 }
 
 var check = function () {
+  $("#timer").hide();
+  clearInterval(countdown);
   socket.emit('moveMade', { move: 'check', bet: 'Check' });
 };
 
 var raise = function () {
+  $("#timer").hide();
+  clearInterval(countdown);
   if (
     parseInt($('#raiseRangeSlider').val()) == $('#raiseRangeSlider').prop('min')
   ) {
@@ -1102,14 +1116,14 @@ socket.on('displayPossibleMoves', function (d) {
     $("#timer").show();
     let startTime = 15;
     $("#timer").html(startTime);
-    let countdown = setInterval(() => {
+    countdown = setInterval(() => {
       startTime--;
       $("#timer").html(startTime);
     }, 1000);
     setTimeout(() => {
-      clearInterval(countdown);
-      $("#timer").hide();
-      fold();
+      if (startTime == 0) clearInterval(countdown);
+      if (startTime == 0) $("#timer").hide();
+      if (startTime == 0) fold();
     }, 15000);
   }
 });
